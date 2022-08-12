@@ -5,10 +5,11 @@ function main() {
     {1,2,"",1.0}//struct - list
 }
 
-class A<T>
-constructor (
+class A<T> where T extends Number {
     private val value: T
-) where T extends Number {
+
+    constructor (value /*auto initialize member*/)
+        /* optional function body */
     public function print() {
         print(value)
     }
@@ -17,7 +18,7 @@ constructor (
         // do something
 
     }
-    // private / protected / package / internal / public
+    // private / protected / internal / public
     friend function main()
     //friend function test(a: Int /*Int is optional*/)
 }

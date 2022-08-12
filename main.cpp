@@ -3,15 +3,12 @@
 #include <vector>
 #include <fstream>
 
-#include "BasicStructures.h"
 #include "Lexer.h"
+#include "Parser.h"
 
 int main() {
-    std::string ("a")[0];
-    std::string () + 'a';
-    std::cout << "Hello, World!" << std::endl;
     Seserot::ErrorTable errorTable;
-    std::ifstream fin("helloworld.se");
+    std::ifstream fin("../helloworld.se");
     std::string file;
     while (fin) {
         std::string a;
@@ -21,8 +18,19 @@ int main() {
     std::cout<<file;
     Seserot::Lexer lexer(errorTable, file);
     lexer.parse();
-    for (auto&item: lexer.tokens) {
-        std::cout<<item.content<<"\n";
+    Seserot::Parser parser(lexer.tokens, errorTable);
+    parser.scan();
+    std::cout << "namespaces\n";
+    for (auto&item: parser.namespaces) {
+        std::cout<<item.first<<"\n";
+    }
+    std::cout << "classes\n";
+    for (auto&item: parser.classes) {
+        std::cout<<item.second->toString()<<"\n";
+    }
+    std::cout << "methods\n";
+    for (auto&item: parser.methods) {
+        std::cout<<item.first<<"\n";
     }
     return 0;
 }

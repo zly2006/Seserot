@@ -13,6 +13,9 @@ namespace Seserot {
         size_t code;
         std::string message;
         std::string category;
+
+        explicit CompilerError(const SourcePosition &where, size_t code, std::string message, std::string category = "");
+
         virtual std::string print();
     };
 

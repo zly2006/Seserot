@@ -88,7 +88,7 @@ namespace Seserot {
             else {
                 tokens.push_back(Token{
                     startPosition, position,
-                    Token::Type::Name, std::string (fileContent.substr(start, cursor - start))
+                    Token::Type::Number, std::string (fileContent.substr(start, cursor - start))
                 });
                 return Ready;
             }
@@ -120,10 +120,16 @@ namespace Seserot {
         }
         else if (state == Ready) {
             if (fileContent[cursor] == '\t'
-                   || fileContent[cursor] == ' '
-                   || fileContent[cursor] == '\n'
-                    ) {
+                   || fileContent[cursor] == ' ') {
                 moveCursor();
+                return Ready;
+            } else if (fileContent[cursor] == '\n') {
+                syncStart();
+                moveCursor();
+                tokens.push_back(Token{
+                    startPosition,position,
+                    Token::NewLine
+                });
                 return Ready;
             }
             if (fileContent[cursor] == '\"') {
