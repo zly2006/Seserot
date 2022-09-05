@@ -7,6 +7,7 @@
 #include "Parser.h"
 
 int main() {
+    std::cout << "Seserot gen0 "<< sizeof(long)*8<<"bit\n";
     Seserot::ErrorTable errorTable;
     std::ifstream fin("../helloworld.se");
     std::string file;

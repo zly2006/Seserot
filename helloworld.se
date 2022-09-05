@@ -1,8 +1,11 @@
 function main() {
     print("Hello World!")
-    val a = a<Int>()
+    val a = A<Int>(1)
     a.t.toString()
-    {1,2,"",1.0}//struct - list
+    [1,2,"",1.0] //: List<Object> (自动退化)
+    {a:1} // class { val a : Int }
+    (1, "") //: Tuple<Int, String>
+    test()
 }
 
 class A<T> where T extends Number {
@@ -25,4 +28,28 @@ class A<T> where T extends Number {
 
 operator add<T, P>(t: T, p: P) {
     return t.toString() + p.toString()
+}
+
+struct B { //: Value, 1byte
+    async function printHello() {
+        async print("Hello")
+    }
+}
+
+fun bar(obj: Object) {
+    println(ref.toString())
+}
+
+fun test {
+    val b = B()
+    val a = A<int>(2)
+    sizeof(A)//invalid
+    sizeof(B)//OK
+    bar(b)
+    bar(a)
+    b//invalid
+    b = B()
+    bar(&b)
+    a//valid
+    B& refB = b
 }

@@ -13,37 +13,36 @@ namespace Seserot {
                 nullptr,
                 "Void",
                 {},
-                false,
-                nullptr,
-                true);
+                nullptr, Static | ValueType);
         const ClassSymbol *const intClass = new ClassSymbol(
                 nullptr,
                 "Int",
                 {},
-                false,
-                nullptr,
-                true);
+                nullptr, Static | ValueType);
         const ClassSymbol *const longClass = new ClassSymbol(
                 nullptr,
                 "Long",
                 {},
-                false,
-                nullptr,
-                true);
+                nullptr, Static | ValueType);
         const ClassSymbol *const floatClass = new ClassSymbol(
                 nullptr,
                 "Float",
                 {},
-                false,
-                nullptr,
-                true);
+                nullptr, Static | ValueType);
         const ClassSymbol *const doubleClass = new ClassSymbol(
                 nullptr,
                 "Double",
                 {},
-                false,
+                nullptr, Static | ValueType);
+        const ClassSymbol *const functionClass = new ClassSymbol(
                 nullptr,
-                true);
+                "Function",
+                {
+                    ClassSymbol(nullptr, "P", {}, nullptr, None),
+                    ClassSymbol(nullptr, "T", {}, nullptr, None),
+                    ClassSymbol(nullptr, "...", {}, nullptr, None),
+                    },
+                nullptr, Static | ValueType);
     };
 
 } // Seserot

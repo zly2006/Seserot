@@ -11,6 +11,8 @@
 #include "BuildIn.h"
 #include <map>
 #include <unordered_map>
+#include <span>
+#include <set>
 
 namespace Seserot {
     struct Expression{
@@ -38,7 +40,36 @@ namespace Seserot {
         std::map<std::string, const Symbol*> methods;
         void reset();
         void scan();
-        std::vector<Token> parseModifiers(std::vector<Token>::iterator it);
+        void parseReference();
+        void processGeneric();
+        void generateTypeVar();
+        void parseFunctionAST();
+        std::vector<std::string> parseModifiers(std::vector<Token>::iterator it);
+    private:
+        std::vector<MethodSymbol> specializedGenericMethod;
+        std::vector<ClassSymbol> specializedGenericClass;
+        std::set<std::string> modifiers {
+                "final",
+                "static",
+                "public",
+                "protected",
+                "internal",
+                "private",
+                "mutable",
+                "immutable",
+                "inner",
+        };
+        std::set<std::string> modifierAccessibility {
+                "public",
+                "protected",
+                "internal",
+                "private"
+        };
+        std::set<std::string> modifierMutable {
+                "mutable",
+                "immutable"
+        };
+
     };
 
 } // Seserot

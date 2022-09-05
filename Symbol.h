@@ -9,6 +9,16 @@
 
 #include "BasicStructures.h"
 namespace Seserot {
+    enum Modifiers {
+        None = 0,
+        Async = 1,
+        Final = 2,
+        Static = 4,
+        Abstract = 8,
+        Operator = 16,
+        ValueType = 32,
+        Readonly = 64,
+    };
     struct Symbol {
         enum Type {
             Class,
@@ -41,23 +51,36 @@ namespace Seserot {
                 : SymbolWithChildren(scope, Namespace, name, nullptr) {}
     };
     struct ClassSymbol: SymbolWithChildren {
-        ClassSymbol(Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, bool isStatic,
-                    ClassSymbol *closureFather, bool isFinal)
+        ClassSymbol(
+                Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
+                Modifiers modifiers)
                 : SymbolWithChildren(scope, Class, name, nullptr),
-                  genericArgs(std::move(genericArgs)), isStatic(isStatic), closureFather(closureFather), isFinal(isFinal) {}
-
+                  genericArgs(std::move(genericArgs)), closureFather(closureFather), modifiers(modifiers) {}
+        ClassSymbol(
+                Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
+                int modifiers)
+                : SymbolWithChildren(scope, Class, name, nullptr),
+                  genericArgs(std::move(genericArgs)), closureFather(closureFather), modifiers((Modifiers)modifiers) {}
+        Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;
-        bool isStatic;
+        /**
+         * 弃用
+         */
         ClassSymbol* closureFather;
-        bool isFinal;
         [[nodiscard]] std::string toString() const {
             std::string ret;
-            if (isStatic) ret += "static ";
-            if (isFinal) ret += "final ";
+            if (modifiers & Modifiers::Static) ret += "static ";
+            if (modifiers & Modifiers::Final) ret += "final ";
             if (closureFather != nullptr) ret += closureFather->name + "::";
             ret += name;
             return ret;
         }
+    };
+    struct MethodSymbol: SymbolWithChildren {
+        Modifiers modifiers;
+        std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
+        std::vector<ClassSymbol*> args;
+        size_t stackSize;
     };
 }
 

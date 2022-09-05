@@ -26,14 +26,15 @@ namespace Seserot {
         auto loadClass = [&](const ClassSymbol *p) {
             classes.emplace(p->name, p);
         };
+        for (auto &item: root.children) {
+            delete item;
+        }
         loadClass(buildIn.voidClass);
         loadClass(buildIn.doubleClass);
         loadClass(buildIn.intClass);
         loadClass(buildIn.floatClass);
         loadClass(buildIn.longClass);
-        for (auto &item: root.children) {
-            delete item;
-        }
+        loadClass(buildIn.functionClass);
     }
 
     void Parser::scan() {
@@ -101,7 +102,7 @@ namespace Seserot {
                     errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
                     errorTable.interrupt("scanning classes");
                 }
-                auto* symbol = new ClassSymbol(currentScope, name, {}, false, nullptr, false);
+                auto* symbol = new ClassSymbol(currentScope, name, {}, nullptr, None);
                 classes.emplace(name,symbol);
                 while (true) {
                     i++;
@@ -127,6 +128,15 @@ namespace Seserot {
                     errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
                     errorTable.interrupt("scanning methods");
                 }
+                tokens[i].parsed = Token::Statement;
+                if (i != tokens.size() - 1) {
+
+                    if (tokens[i].type == Token::Operator && tokens.operator[](i).content == "<") {
+                        //todo
+                    }
+                }
+                auto modifiers = parseModifiers(tokens.begin() + i);
+
                 methods.emplace(name, nullptr);//todo
             }
         }
@@ -135,16 +145,18 @@ namespace Seserot {
     Parser::Parser(std::vector<Token> tokens, ErrorTable &errorTable)
             : tokens(std::move(tokens)), errorTable(errorTable) {}
 
-    std::vector<Token> Parser::parseModifiers(std::vector<Token>::iterator it) {
-        std::vector<Token> ret;
-        if (it == tokens.begin()) {
-            return ret;
-        } else --it;
-        while (it->type == Token::Name) {
-            if (false/**/) {
-                return ret;
+    std::vector<std::string> Parser::parseModifiers(std::vector<Token>::iterator it) {
+        std::vector<std::string> ret;
+        if (it == tokens.begin()) return ret;
+        auto first = it - 1;
+        while (modifiers.count(first->content)) {
+            if (first->type == Token::Name) {
+                ret.push_back(first->content);
             }
-            ret.push_back(*it);
+            first->parsed = Token::Statement;
+            if (first != tokens.begin())
+                break;
+            first--;
         }
         return ret;
     }

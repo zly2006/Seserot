@@ -17,12 +17,31 @@ namespace Seserot {
             column = 0;
         }
 
-        int operator<=>(const SourcePosition& another) const {
+        [[nodiscard]] int compare(const SourcePosition& another) const {
             if (line > another.line) return 1;
             else if (line < another.line) return -1;
             else if (column > another.column) return 1;
             else if (column < another.column) return -1;
             else return 0;
+        }
+
+        bool operator<(const SourcePosition& another) const {
+            return compare(another) < 0;
+        }
+        bool operator>(const SourcePosition& another) const {
+            return compare(another) > 0;
+        }
+        bool operator==(const SourcePosition& another) const {
+            return compare(another) == 0;
+        }
+        bool operator<=(const SourcePosition& another) const {
+            return compare(another) <= 0;
+        }
+        bool operator>=(const SourcePosition& another) const {
+            return compare(another) >= 0;
+        }
+        bool operator!=(const SourcePosition& another) const {
+            return compare(another) != 0;
         }
 
         size_t line, column;
@@ -71,6 +90,12 @@ namespace Seserot {
         SourcePosition start, stop;
         Type type;
         std::string content;
+        enum ParsedType {
+            Ready,
+            Statement,
+            Parsed,
+        };
+        ParsedType parsed = Ready;
     };
 }
 #endif //SESEROT_GEN0_BASIC_STRUCTURES_H
