@@ -5,7 +5,9 @@ e.g.
 namespace <EOF>
 2012 class name not found.
 2013 method name not found.
+2014 unexpected EOF.
 2501 Namespace can only be defined in namespace scope.
-2502 namespace definition already exists
-2503 class definition already exists
-2504 method definition already exists
+2502 namespace definition already exists.
+2503 class definition already exists.
+2504 method definition already exists.
+2505 conflict modifier.

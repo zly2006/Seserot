@@ -8,7 +8,7 @@ function main() {
     test()
 }
 
-class A<T> where T extends Number {
+class A<T> where (T is Number) {
     private val value: T
 
     constructor (value /*auto initialize member*/)
@@ -22,8 +22,8 @@ class A<T> where T extends Number {
 
     }
     // private / protected / internal / public
-    friend function main()
-    //friend function test(a: Int /*Int is optional*/)
+    // friend function main()//(friend not implemented)
+    // friend function test(a: Int /*Int is optional*/)
 }
 
 operator add<T, P>(t: T, p: P) {

@@ -37,7 +37,7 @@ namespace Seserot {
         std::vector<Token> tokens;
         std::map<std::string, NamespaceSymbol*> namespaces;
         std::map<std::string, ClassSymbol*> classes;
-        std::map<std::string, Symbol*> methods;
+        std::multimap<std::string, Symbol*> methods;
         void reset();
         void scan();
         /*void parseReference();
@@ -46,6 +46,10 @@ namespace Seserot {
         void parseFunctionAST();*/
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
     private:
+        using token_iter = std::vector<Token>::iterator;
+        std::map<Token*, Symbol*> reference;
+        Token &read(size_t&);
+        static ClassSymbol* currentClassSymbol(Symbol*);
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
         std::set<std::string> modifiers {

@@ -22,7 +22,12 @@ namespace Seserot {
         Mutable = 256,
         PrivateProtected = 512,
         PrivateInternal = 1024,
+        Inner = 2048,
     };
+    bool isPrivateModifier(Modifiers);
+    bool isPublicModifier(Modifiers);
+    bool isInternalModifier(Modifiers);
+    bool isProtectedModifier(Modifiers);
     struct Symbol {
         enum Type {
             Class,
