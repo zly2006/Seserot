@@ -35,16 +35,16 @@ namespace Seserot {
         Parser(std::vector<Token> tokens, ErrorTable &errorTable);
         FileScope root;
         std::vector<Token> tokens;
-        std::map<std::string, const NamespaceSymbol*> namespaces;
-        std::map<std::string, const ClassSymbol*> classes;
-        std::map<std::string, const Symbol*> methods;
+        std::map<std::string, NamespaceSymbol*> namespaces;
+        std::map<std::string, ClassSymbol*> classes;
+        std::map<std::string, Symbol*> methods;
         void reset();
         void scan();
-        void parseReference();
+        /*void parseReference();
         void processGeneric();
         void generateTypeVar();
-        void parseFunctionAST();
-        std::vector<std::string> parseModifiers(std::vector<Token>::iterator it);
+        void parseFunctionAST();*/
+        Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
     private:
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
@@ -58,6 +58,7 @@ namespace Seserot {
                 "mutable",
                 "immutable",
                 "inner",
+                "partial",
         };
         std::set<std::string> modifierAccessibility {
                 "public",

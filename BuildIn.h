@@ -9,32 +9,32 @@ namespace Seserot {
 
     class BuildIn {
     public:
-        const ClassSymbol *const voidClass = new ClassSymbol(
+        ClassSymbol *const voidClass = new ClassSymbol(
                 nullptr,
                 "Void",
                 {},
                 nullptr, Static | ValueType);
-        const ClassSymbol *const intClass = new ClassSymbol(
+        ClassSymbol *const intClass = new ClassSymbol(
                 nullptr,
                 "Int",
                 {},
                 nullptr, Static | ValueType);
-        const ClassSymbol *const longClass = new ClassSymbol(
+        ClassSymbol *const longClass = new ClassSymbol(
                 nullptr,
                 "Long",
                 {},
                 nullptr, Static | ValueType);
-        const ClassSymbol *const floatClass = new ClassSymbol(
+        ClassSymbol *const floatClass = new ClassSymbol(
                 nullptr,
                 "Float",
                 {},
                 nullptr, Static | ValueType);
-        const ClassSymbol *const doubleClass = new ClassSymbol(
+        ClassSymbol *const doubleClass = new ClassSymbol(
                 nullptr,
                 "Double",
                 {},
                 nullptr, Static | ValueType);
-        const ClassSymbol *const functionClass = new ClassSymbol(
+        ClassSymbol *const functionClass = new ClassSymbol(
                 nullptr,
                 "Function",
                 {

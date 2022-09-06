@@ -18,6 +18,10 @@ namespace Seserot {
         Operator = 16,
         ValueType = 32,
         Readonly = 64,
+        Partial = 128,
+        Mutable = 256,
+        PrivateProtected = 512,
+        PrivateInternal = 1024,
     };
     struct Symbol {
         enum Type {
@@ -77,6 +81,12 @@ namespace Seserot {
         }
     };
     struct MethodSymbol: SymbolWithChildren {
+        MethodSymbol(
+                Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
+                std::vector<ClassSymbol *> args)
+                : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers), genericArgs(std::move(genericArgs)),
+                  args(std::move(args)), stackSize(0) {}
+
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
         std::vector<ClassSymbol*> args;

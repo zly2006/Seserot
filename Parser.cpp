@@ -23,7 +23,7 @@ namespace Seserot {
         namespaces.clear();
         classes.clear();
         methods.clear();
-        auto loadClass = [&](const ClassSymbol *p) {
+        auto loadClass = [&](ClassSymbol *p) {
             classes.emplace(p->name, p);
         };
         for (auto &item: root.children) {
@@ -82,28 +82,33 @@ namespace Seserot {
                 if (currentFatherSymbol.top() != rootNamespace) {
                     name = currentFatherSymbol.top()->name + "." + name;
                 }
-                if (namespaces.count(name)) {
-                    errorTable.errors.emplace_back(tokens[i].stop, 2502, "namespace definition already exists.");
-                    errorTable.interrupt("scanning namespaces");
+                if (!namespaces.contains(name)) {
+                    namespaces.emplace(name, new NamespaceSymbol(currentScope, name));
                 }
-                namespaces.emplace(name, new NamespaceSymbol(currentScope, name));
+                currentFatherSymbol.push(namespaces[name]);
             }
             if (tokens[i].content == "class") {
                 if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                    errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
-                    errorTable.interrupt("scanning classes");
+                    //errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
+                    //errorTable.interrupt("scanning classes");
                 }
+                auto mod = parseModifiers(tokens.begin() + i);
                 i++;
                 std::string name = tokens[i].content;
                 if (currentFatherSymbol.top() != rootNamespace) {
                     name = currentFatherSymbol.top()->name + "." + name;
                 }
-                if (classes.count(name)) {
+                if (classes.count(name) && !(mod & Partial)) {
                     errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
                     errorTable.interrupt("scanning classes");
                 }
-                auto* symbol = new ClassSymbol(currentScope, name, {}, nullptr, None);
-                classes.emplace(name,symbol);
+                ClassSymbol* symbol;
+                if (classes.contains(name))
+                    symbol = classes[name];
+                else {
+                    symbol = new ClassSymbol(currentScope, name, {}, nullptr, None);
+                    classes.emplace(name, symbol);
+                }
                 while (true) {
                     i++;
                     if (tokens[i].content == "{" && tokens[i].type == Token::Operator) {
@@ -119,6 +124,7 @@ namespace Seserot {
                     errorTable.errors.emplace_back(tokens[i].stop,2013,"method name not found.");
                     errorTable.interrupt("scanning methods");
                 }
+                Modifiers mod = parseModifiers(tokens.begin() + i);
                 i++;
                 std::string name = tokens[i].content;
                 if (currentFatherSymbol.top() != rootNamespace) {
@@ -128,16 +134,16 @@ namespace Seserot {
                     errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
                     errorTable.interrupt("scanning methods");
                 }
+                auto* methodSymbol = new MethodSymbol(nullptr, name, None,
+                                                              {}, {});
                 tokens[i].parsed = Token::Statement;
                 if (i != tokens.size() - 1) {
-
-                    if (tokens[i].type == Token::Operator && tokens.operator[](i).content == "<") {
+                    if (tokens[i].type == Token::Operator && tokens[i].content == "<") {
                         //todo
                     }
                 }
-                auto modifiers = parseModifiers(tokens.begin() + i);
 
-                methods.emplace(name, nullptr);//todo
+                methods.emplace(name, methodSymbol);//todo
             }
         }
     }
@@ -145,19 +151,58 @@ namespace Seserot {
     Parser::Parser(std::vector<Token> tokens, ErrorTable &errorTable)
             : tokens(std::move(tokens)), errorTable(errorTable) {}
 
-    std::vector<std::string> Parser::parseModifiers(std::vector<Token>::iterator it) {
-        std::vector<std::string> ret;
-        if (it == tokens.begin()) return ret;
+    Modifiers Parser::parseModifiers(std::vector<Token>::iterator it, Modifiers def) {
+        std::set<std::string_view> ret;
+        if (it == tokens.begin()) return None;
         auto first = it - 1;
         while (modifiers.count(first->content)) {
             if (first->type == Token::Name) {
-                ret.push_back(first->content);
+                if (ret.contains(first->content)) {
+                    errorTable.errors.emplace_back(first->start, 0, "");
+                    errorTable.interrupt("parsing modifiers.");
+                }
+                ret.insert(first->content);
             }
             first->parsed = Token::Statement;
             if (first != tokens.begin())
                 break;
             first--;
         }
-        return ret;
+        unsigned int m = def;
+        bool accessibilityParsed = false;
+        bool mutableParsed = false;
+        for (auto& mo : ret) {
+            if (mo == "public" || mo == "private" || mo == "internal" || mo == "protected") {
+                if (accessibilityParsed) {
+                    errorTable.errors.emplace_back(it->start, 0, "");//todo
+                    errorTable.interrupt();
+                }
+                accessibilityParsed = true;
+                if (mo == "public") {
+
+                }
+                else if (mo == "private") {
+                    m |= PrivateInternal;
+                    m |= PrivateProtected;
+                }
+                else if (mo == "protected") {
+                    m |= PrivateProtected;
+                }
+                else if (mo == "internal") {
+                    m |= PrivateInternal;
+                }
+            }
+            else if (mo == "mutable" || mo == "immutable") {
+                if (mutableParsed) {
+                    errorTable.errors.emplace_back(it->start, 0, "");//todo
+                    errorTable.interrupt();
+                }
+                mutableParsed = true;
+                if (mo == "mutable") {
+                    m |= Mutable;
+                }
+            }
+        }
+        return (Modifiers)m;
     }
 } // Seserot
