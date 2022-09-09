@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <string>
 #include "ByteCodeWriter.h"
 
 namespace Seserot {
