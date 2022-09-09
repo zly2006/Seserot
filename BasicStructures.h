@@ -10,6 +10,7 @@
 
 namespace Seserot {
     struct SourcePosition {
+        std::string file;
         SourcePosition(int _line, int _column) : line(_line), column(_column) {}
 
         SourcePosition() {

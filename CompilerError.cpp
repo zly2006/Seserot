@@ -8,8 +8,8 @@
 namespace Seserot {
     std::string CompilerError::print() {
         char s[100];
-        sprintf(s, "    E%zu[%s]:%s\n      @<?>(line %zu, column %zu)", code, category.c_str(),
-                message.c_str(), where.line, where.column);
+        sprintf(s, "    E%zu[%s]:%s\n      @%s(line %zu, column %zu)", code, category.c_str(),
+                message.c_str(), where.file.c_str(), where.line, where.column);
         return std::string(s); // NOLINT(modernize-return-braced-init-list)
     }
 

@@ -1,3 +1,6 @@
+import seserot.io.File
+import seserot.io.print
+
 function main() {
     print("Hello World!")
     val a = A<Int>(1)
@@ -36,20 +39,18 @@ struct B { //: Value, 1byte
     }
 }
 
-fun bar(obj: Object) {
+function bar(obj: Object) {
     println(ref.toString())
 }
 
-fun test {
+function test() {
     val b = B()
-    val a = A<int>(2)
+    val a = new A<int>(2)
     sizeof(A)//invalid
     sizeof(B)//OK
     bar(b)
     bar(a)
-    b//invalid
-    b = B()
-    bar(&b)
-    a//valid
-    B& refB = b
+    var refB = b //: B&
+    sizeof(refB) //invalid
+    bar(refB)
 }

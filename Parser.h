@@ -11,7 +11,6 @@
 #include "BuildIn.h"
 #include <map>
 #include <unordered_map>
-#include <span>
 #include <set>
 
 namespace Seserot {
@@ -29,6 +28,8 @@ namespace Seserot {
     };
 
     class Parser {
+    private:
+        using token_iter = std::vector<Token>::iterator;
     public:
         BuildIn buildIn;
         ErrorTable& errorTable;
@@ -38,18 +39,24 @@ namespace Seserot {
         std::map<std::string, NamespaceSymbol*> namespaces;
         std::map<std::string, ClassSymbol*> classes;
         std::multimap<std::string, Symbol*> methods;
+        std::vector<VariableSymbol*> variables;
+        std::vector<PropertySymbol*> properties;
+        void parse();
         void reset();
         void scan();
-        /*void parseReference();
-        void processGeneric();
+        void parseReference();
+        /*void processGeneric();
         void generateTypeVar();
         void parseFunctionAST();*/
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
     private:
-        using token_iter = std::vector<Token>::iterator;
-        std::map<Token*, Symbol*> reference;
         Token &read(size_t&);
+        Symbol* searchSymbol(Symbol::Type, std::string, Scope*);
         static ClassSymbol* currentClassSymbol(Symbol*);
+        static MethodSymbol* currentMethodSymbol(Symbol*);
+
+        std::map<Token*, Symbol*> reference;
+        std::map<Token*, Scope*> token2scope;
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
         std::set<std::string> modifiers {

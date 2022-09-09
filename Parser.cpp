@@ -9,6 +9,13 @@
 #include <utility>
 #include <stack>
 
+
+/**具体流程
+ * reset：不多说
+ * scan：扫描所有的符号，同时泛型的临时ClassSymbol也要生成。
+ *
+ */
+
 namespace Seserot {
     void Parser::reset() {
         for (const auto &item: namespaces) {
@@ -19,6 +26,12 @@ namespace Seserot {
         }
         for (const auto &item: methods) {
             delete item.second;
+        }
+        for (const auto &item: variables) {
+            delete item;
+        }
+        for (const auto &item: properties) {
+            delete item;
         }
         namespaces.clear();
         classes.clear();
@@ -38,7 +51,6 @@ namespace Seserot {
     }
 
     void Parser::scan() {
-        reset();
         Scope* currentScope = &root;
         SymbolWithChildren* rootNamespace = new NamespaceSymbol(currentScope, "<root>");
         namespaces.emplace("",(NamespaceSymbol*)rootNamespace);
@@ -71,113 +83,143 @@ namespace Seserot {
                     endScope(tokens[i]);
                 }
             }
-            if (tokens[i].content == "namespace") {
-                if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                    errorTable.errors.emplace_back(tokens[i].stop,2011,"namespace not found.");
-                    errorTable.interrupt("scanning namespaces");
-                }
-                i++;
-                if (currentFatherSymbol.top()->type != Symbol::Namespace) {
-                    errorTable.errors.emplace_back(tokens[i].start,2501,
-                                                          "Namespace can only be defined in namespace scope.");
-                    errorTable.interrupt("scanning namespaces");
-                }
-                std::string name = tokens[i].content;
-                if (currentFatherSymbol.top() != rootNamespace) {
-                    name = currentFatherSymbol.top()->name + "." + name;
-                }
-                if (!namespaces.contains(name)) {
-                    namespaces.emplace(name, new NamespaceSymbol(currentScope, name));
-                }
-                currentFatherSymbol.push(namespaces[name]);
-            }
-            if (tokens[i].content == "class") {
-                if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                    //errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
-                    //errorTable.interrupt("scanning classes");
-                }
-                auto mod = parseModifiers(tokens.begin() + i);
-                i++;
-                std::string name = tokens[i].content;
-                if (currentFatherSymbol.top() != rootNamespace) {
-                    name = currentFatherSymbol.top()->name + "." + name;
-                }
-                if (classes.count(name) && !(mod & Partial)) {
-                    errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
-                    errorTable.interrupt("scanning classes");
-                }
-                ClassSymbol* symbol;
-                if (classes.contains(name))
-                    symbol = classes[name];
-                else {
-                    symbol = new ClassSymbol(currentScope, name, {}, nullptr, None);
-                    classes.emplace(name, symbol);
-                }
-                while (true) {
-                    i++;//todo
-                    if (tokens[i].content == "{" && tokens[i].type == Token::Operator) {
-                        newScope(tokens[i]);
-                        symbol->childScope = currentScope;
-                        currentFatherSymbol.push(symbol);
-                        break;
+            else if (tokens[i].type == Token::Name) {
+                token2scope[&tokens[i]] = currentScope;
+                if (tokens[i].content == "namespace") {
+                    if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
+                        errorTable.errors.emplace_back(tokens[i].stop, 2011, "namespace not found.");
+                        errorTable.interrupt("scanning namespaces");
                     }
-                }
-            }
-            if (tokens[i].content == "function") {
-                if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                    errorTable.errors.emplace_back(tokens[i].stop,2013,"method name not found.");
-                    errorTable.interrupt("scanning methods");
-                }
-                Modifiers mod = parseModifiers(tokens.begin() + i);
-                i++;
-                std::string name = tokens[i].content;
-                if (currentFatherSymbol.top() != rootNamespace) {
-                    currentFatherSymbol.top()->name + "." + name;
-                }
-                if (methods.count(name)) {
-                    errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
-                    errorTable.interrupt("scanning methods");
-                }
-                auto* methodSymbol = new MethodSymbol(nullptr, name, mod,
-                                                              {}, {});
-                tokens[i].parsed = Token::Statement;
-                ClassSymbol *father = currentClassSymbol(currentFatherSymbol.top());
-                methodSymbol->father = father;
-                if (father != nullptr && father->modifiers & Static) {
-                    if (!(methodSymbol->modifiers & Static)) {
-                        errorTable.errors.emplace_back(tokens[i].start, 0, "");//todo
+                    if (currentFatherSymbol.top()->type != Symbol::Namespace) {
+                        errorTable.errors.emplace_back(tokens[i].start, 2501,
+                                                       "Namespace can only be defined in namespace scope.");
+                        errorTable.interrupt("scanning namespaces");
                     }
+                    std::string name = read(i).content;
+                    if (currentFatherSymbol.top() != rootNamespace) {
+                        name = currentFatherSymbol.top()->name + "." + name;
+                    }
+                    if (!namespaces.contains(name)) {
+                        namespaces.emplace(name, new NamespaceSymbol(currentScope, name));
+                    }
+                    currentFatherSymbol.push(namespaces[name]);
                 }
-                if (i != tokens.size() - 1) {
-                    if (tokens[i].type == Token::Operator && tokens[i].content == "<") {
-                        Token &genericName = read(i);
-                        if (genericName.type != Token::Name) {
-                            errorTable.errors.emplace_back(tokens[i].start, 0, "");//todo
-                            errorTable.interrupt();
+                else if (tokens[i].content == "class") {
+                    if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
+                        errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
+                        errorTable.interrupt("scanning classes");
+                    }
+                    auto mod = parseModifiers(tokens.begin() + i);
+                    i++;
+                    std::string name = tokens[i].content;
+                    if (currentFatherSymbol.top() != rootNamespace) {
+                        name = currentFatherSymbol.top()->name + "." + name;
+                    }
+                    if (classes.count(name) && !(mod & Partial)) {
+                        errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
+                        errorTable.interrupt("scanning classes");
+                    }
+                    ClassSymbol *symbol;
+                    if (classes.contains(name))
+                        symbol = classes[name];
+                    else {
+                        symbol = new ClassSymbol(currentScope, name, {}, nullptr, None);
+                        classes.emplace(name, symbol);
+                    }
+                    while (true) {
+                        i++;//todo
+                        if (tokens[i].content == "{" && tokens[i].type == Token::Operator) {
+                            newScope(tokens[i]);
+                            symbol->childScope = currentScope;
+                            currentFatherSymbol.push(symbol);
+                            break;
                         }
-                        methodSymbol->genericArgs.push_back
-                        (ClassSymbol(nullptr, genericName.content, {}, nullptr, 0));
+
                     }
                 }
-                Token& args_optional = read(i);
-                if (args_optional.type == Token::Operator && args_optional.content == "(") {
-                    //todo
-                    while (read(i).content != ")");
+                else if (tokens[i].content == "function") {
+                    if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
+                        errorTable.errors.emplace_back(tokens[i].stop, 2013, "method name not found.");
+                        errorTable.interrupt("scanning methods");
+                    }
+                    Modifiers mod = parseModifiers(tokens.begin() + i);
+                    i++;
+                    std::string name = tokens[i].content;
+                    if (currentFatherSymbol.top() != rootNamespace) {
+                        currentFatherSymbol.top()->name + "." + name;
+                    }
+                    if (methods.count(name)) {
+                        errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
+                        errorTable.interrupt("scanning methods");
+                    }
+                    auto *methodSymbol = new MethodSymbol(nullptr, name, mod,
+                                                          {}, {});
+                    tokens[i].parsed = Token::Statement;
+                    ClassSymbol *father = currentClassSymbol(currentFatherSymbol.top());
+                    methodSymbol->father = father;
+                    if (father != nullptr && father->modifiers & Static) {
+                        if (!(methodSymbol->modifiers & Static)) {
+                            errorTable.errors.emplace_back(tokens[i].start, 0, "");//todo
+                        }
+                    }
+                    if (i != tokens.size() - 1) {
+                        if (tokens[i].type == Token::Operator && tokens[i].content == "<") {
+                            Token &genericName = read(i);
+                            if (genericName.type != Token::Name) {
+                                errorTable.errors.emplace_back(tokens[i].start, 0, "");//todo
+                                errorTable.interrupt();
+                            }
+                            methodSymbol->genericArgs.push_back
+                                    (ClassSymbol(nullptr, genericName.content, {}, nullptr, 0));
+                        }
+                    }
+                    Token &args_optional = read(i);
+                    if (args_optional.type == Token::Operator && args_optional.content == "(") {
+                        //todo
+                        while (read(i).content != ")");
+                    }
+                    Token &where_optional = read(i);
+                    if (where_optional.type == Token::Name && where_optional.content == "where") {
+                        //todo
+                    }
+                    else if (where_optional.type == Token::Operator && where_optional.content == "{") {
+                        newScope(tokens[i]);
+                        methodSymbol->childScope = currentScope;
+                        currentFatherSymbol.push(methodSymbol);
+                        for (auto &item: methodSymbol->genericArgs) {
+                            item.father = methodSymbol;
+                            item.scope = currentScope;
+                        }
+                    }
+
+                    methods.emplace(name, methodSymbol);
                 }
-                Token& where_optional = read(i);
-                if (where_optional.type == Token::Name && where_optional.content == "where") {
-                    //todo
-                }
-                else if (where_optional.type == Token::Operator && where_optional.content == "{") {
-                    newScope(tokens[i]);
-                    methodSymbol->childScope = currentScope;
-                    currentFatherSymbol.push(methodSymbol);
-                    for (auto &item: methodSymbol->genericArgs) {
-                        item.father = methodSymbol;
-                        item.scope = currentScope;
+                else if (tokens[i].content == "var" || tokens[i].content == "val") {
+                    auto mod = parseModifiers(tokens.begin() + i);
+                    auto& t = read(i);
+                    auto* classSymbol = currentClassSymbol(currentFatherSymbol.top());
+                    auto* methodSymbol = currentMethodSymbol(currentFatherSymbol.top());
+                    if (tokens[i].content == "val") {
+                        if (mod & Mutable) {
+                            //todo
+                        }
+                    } // val
+                    else {
+                        mod = static_cast<Modifiers>(mod | Mutable);
+                    } // var
+                    if (methodSymbol != nullptr) {
+                        auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod);
+                        variables.push_back(pItem);
+                    }
+                    else if (classSymbol == currentFatherSymbol.top()) {
+                        auto *pItem = new PropertySymbol(currentScope, t.content, classSymbol, mod);
+                        properties.push_back(pItem);
+                    }
+                    else {
+                        //todo: 分配错误码
+                        errorTable.errors.emplace_back(t.start, 0, "properties should be declared in class scope.");
                     }
                 }
-                methods.emplace(name, methodSymbol);
             }
         }
         if (currentScope != &root) {
@@ -291,5 +333,32 @@ namespace Seserot {
             symbol = symbol->father;
         }
         return (ClassSymbol *)symbol;
+    }
+
+    void Parser::parseReference() {
+        for (auto &item: tokens) {
+            if (item.type == Token::Name && item.parsed == Token::Ready) {
+                searchSymbol(static_cast<typename Symbol::Type>(65535), item.content, token2scope[&item]);
+                reference[&item] = nullptr;
+                // todo
+            }
+        }
+    }
+
+    void Parser::parse() {
+        reset();
+        scan();
+        parseReference();
+    }
+
+    MethodSymbol *Parser::currentMethodSymbol(Symbol *symbol) {
+        while (symbol != nullptr && symbol->type != Symbol::Method) {
+            symbol = symbol->father;
+        }
+        return (MethodSymbol *)symbol;
+    }
+
+    Symbol *Parser::searchSymbol(Symbol::Type type, std::string name, Scope* scope) {
+        return nullptr;
     }
 } // Seserot

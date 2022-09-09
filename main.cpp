@@ -6,6 +6,19 @@
 #include "Lexer.h"
 #include "Parser.h"
 
+#include <filesystem>
+
+std::optional<int> build(std::filesystem::path path) {
+    std::filesystem::directory_iterator iterator(path);
+    if (!iterator->exists()) {
+        return {};
+    }
+    for (auto &item : iterator) {
+        std::filesystem::current_path();
+    }
+    return 0;
+}
+
 int main() {
     std::cout << "Seserot gen0 "<< sizeof(long)*8<<"bit\n";
     Seserot::ErrorTable errorTable;
@@ -20,7 +33,7 @@ int main() {
     Seserot::Lexer lexer(errorTable, file);
     lexer.parse();
     Seserot::Parser parser(lexer.tokens, errorTable);
-    parser.scan();
+    parser.parse();
     std::cout << "namespaces\n";
     for (auto&item: parser.namespaces) {
         std::cout<<item.first<<"\n";
