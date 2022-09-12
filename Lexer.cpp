@@ -94,13 +94,16 @@ namespace Seserot {
             }
         }
         else if (state == Identifier) {
-            if (isalpha(fileContent[cursor]) || fileContent[cursor] == '_') {
+            if (isalpha(fileContent[cursor])
+                || fileContent[cursor] == '_'
+                || isdigit(fileContent[cursor])) {
                 moveCursor();
                 return Identifier;
-            } else {
+            }
+            else {
                 tokens.push_back(Token{
                         startPosition, position,
-                        Token::Type::Name, std::string (fileContent.substr(start, cursor - start))
+                        Token::Type::Name, std::string(fileContent.substr(start, cursor - start))
                 });
                 return Ready;
             }
@@ -229,14 +232,14 @@ namespace Seserot {
                             char a[2];
                             a[0] = content[i+1];
                             a[1] = content[i+2];
-                            for (int j = 0; j < 2; ++j) {
-                                if (a[j] <= '9' && a[j] >= '0') {
-                                    a[j] = a[j] - '0';
-                                } else if (a[j] <= 'f' && a[j] >= 'a') {
-                                    a[j] = a[j] - 'a';
-                                } else if (a[j] <= 'F' && a[j] >= 'A') {
-                                    a[j] = a[j] - 'A';
-                                } else errorTable.interrupt();
+                            for (char & j : a) {
+                                if (j <= '9' && j >= '0')
+                                    j -= '0';
+                                else if (j <= 'f' && j >= 'a')
+                                    j -= 'a';
+                                else if (j <= 'F' && j >= 'A')
+                                    j -= 'A';
+                                else errorTable.interrupt();
                             }
                         } else {
                             errorTable.interrupt("parse literal: HEX");

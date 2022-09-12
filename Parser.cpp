@@ -77,6 +77,7 @@ namespace Seserot {
         };
         for (size_t i = 0; i < tokens.size(); ++i) {
             if (tokens[i].type == Token::Operator) {
+                // 处理scope
                 if (tokens[i].content == "{") {
                     newScope(tokens[i]);
                 } else if (tokens[i].content == "}") {
@@ -110,11 +111,11 @@ namespace Seserot {
                         errorTable.interrupt("scanning classes");
                     }
                     auto mod = parseModifiers(tokens.begin() + i);
+                    if (!(mod & Inner)) {
+                        mod = static_cast<Modifiers>(mod | Static);
+                    }
                     i++;
                     std::string name = tokens[i].content;
-                    if (currentFatherSymbol.top() != rootNamespace) {
-                        name = currentFatherSymbol.top()->name + "." + name;
-                    }
                     if (classes.count(name) && !(mod & Partial)) {
                         errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
                         errorTable.interrupt("scanning classes");
@@ -134,7 +135,6 @@ namespace Seserot {
                             currentFatherSymbol.push(symbol);
                             break;
                         }
-
                     }
                 }
                 else if (tokens[i].content == "function") {
@@ -153,7 +153,7 @@ namespace Seserot {
                         errorTable.interrupt("scanning methods");
                     }
                     auto *methodSymbol = new MethodSymbol(nullptr, name, mod,
-                                                          {}, {});
+                                                          {}, {}, nullptr);
                     tokens[i].parsed = Token::Statement;
                     ClassSymbol *father = currentClassSymbol(currentFatherSymbol.top());
                     methodSymbol->father = father;
@@ -201,7 +201,8 @@ namespace Seserot {
                     auto* methodSymbol = currentMethodSymbol(currentFatherSymbol.top());
                     if (tokens[i].content == "val") {
                         if (mod & Mutable) {
-                            //todo
+                            //todo: 分配错误码
+                            errorTable.errors.emplace_back(t.start, 0, "val cannot be mutable.");
                         }
                     } // val
                     else {
@@ -358,7 +359,15 @@ namespace Seserot {
         return (MethodSymbol *)symbol;
     }
 
-    Symbol *Parser::searchSymbol(Symbol::Type type, std::string name, Scope* scope) {
-        return nullptr;
+    std::vector<Symbol *> Parser::searchSymbol(typename Symbol::Type type, std::string name, Scope* scope) {
+        std::vector<Symbol *> ret;
+        if (type & Symbol::Class) {
+            for (const auto &item: classes) {
+                if (item.first == name) {
+                    ret.push_back(item.second);
+                }
+            }
+        }
+        return ret;
     }
 } // Seserot
