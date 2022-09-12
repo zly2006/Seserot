@@ -51,7 +51,7 @@ namespace Seserot {
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
     private:
         Token &read(size_t&);
-        Symbol* searchSymbol(Symbol::Type, std::string, Scope*);
+        std::vector<Symbol*> searchSymbol(Symbol::Type, std::string, Scope*);
         static ClassSymbol* currentClassSymbol(Symbol*);
         static MethodSymbol* currentMethodSymbol(Symbol*);
 
@@ -70,6 +70,7 @@ namespace Seserot {
                 "immutable",
                 "inner",
                 "partial",
+
         };
         std::set<std::string> modifierAccessibility {
                 "public",

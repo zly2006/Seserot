@@ -11,6 +11,12 @@ function main() {
     test()
 }
 
+trait A {
+    function a() : Int {
+        return 0
+    }
+}
+
 class A<T> where (T is Number) {
     private val value: T
 
@@ -53,4 +59,11 @@ function test() {
     var refB = b //: B&
     sizeof(refB) //invalid
     bar(refB)
+    await ret1()//1
+    ret1() + 2 //: async Int
+    await (ret1() + 2) //: Int
+}
+
+async function ret1(): Int {
+    return 1
 }

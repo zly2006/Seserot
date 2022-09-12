@@ -61,6 +61,11 @@ namespace Seserot {
                 : Symbol(scope, type, name, nullptr), childScope(childScope) {}
 
         Scope *childScope;
+
+        void fun() {
+            name = "";
+
+        }
     };
 
     struct NamespaceSymbol : SymbolWithChildren {
@@ -103,20 +108,22 @@ namespace Seserot {
     struct MethodSymbol : SymbolWithChildren {
         MethodSymbol(
                 Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                std::vector<ClassSymbol *> args)
+                std::vector<ClassSymbol *> args, ClassSymbol *returnType)
                 : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),
                   genericArgs(std::move(genericArgs)),
-                  args(std::move(args)), stackSize(0) {}
+                  args(std::move(args)), stackSize(0), returnType(returnType) {}
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
         std::vector<ClassSymbol *> args;
+        ClassSymbol *returnType;
         size_t stackSize;
     };
 
     struct VariableSymbol : Symbol {
         VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers)
                 : Symbol(scope, Variable, name, father), modifiers(modifiers) {}
+        ClassSymbol* returnType = nullptr;
         Modifiers modifiers;
     };
 
@@ -125,6 +132,7 @@ namespace Seserot {
                 Scope *scope, const std::string &name, Symbol *father,
                 Modifiers modifiers) : Symbol(scope, Property, name, father), modifiers(modifiers) {}
         Modifiers modifiers;
+        ClassSymbol* returnType = nullptr;
         MethodSymbol* getter = nullptr;
         MethodSymbol* setter = nullptr;
     };
