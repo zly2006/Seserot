@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
 
 namespace Seserot {
     struct SourcePosition {
