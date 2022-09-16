@@ -94,7 +94,7 @@ namespace Seserot {
                 "internal",
                 "private"
         };
-        const std::set<const std::string> modifierMutable {
+        const std::set<std::string> modifierMutable {
                 "mutable",
                 "immutable"
         };
