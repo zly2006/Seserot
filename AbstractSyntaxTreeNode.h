@@ -10,6 +10,7 @@
 #include <string>
 #include <cstring>
 #include "ByteCodeWriter.h"
+#include "Symbol.h"
 
 namespace Seserot {
 
@@ -23,11 +24,13 @@ namespace Seserot {
             Call,
             CallVirtual,
             Assignment,
+            Error,
         };
-        Actions action;
-        std::vector<AbstractSyntaxTreeNode> children;
+        Actions action = Error;
+        std::vector<AbstractSyntaxTreeNode> children = {};
         size_t write(char*);
         void read(char*, size_t);
+        ClassSymbol* typeInferred;
     };
 
 } // Seserot

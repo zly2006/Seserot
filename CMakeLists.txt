@@ -3,7 +3,7 @@ project(Seserot_gen0)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Seserot_gen0
+add_executable(
         main.cpp
         Lexer.cpp Lexer.h
         ErrorTable.cpp ErrorTable.h

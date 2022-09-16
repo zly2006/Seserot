@@ -12,6 +12,7 @@
 #include <map>
 #include <unordered_map>
 #include <set>
+#include "AbstractSyntaxTreeNode.h"
 
 namespace Seserot {
     struct Expression{
@@ -44,10 +45,12 @@ namespace Seserot {
         void parse();
         void reset();
         void scan();
+        size_t generateStack(MethodSymbol*);
         void parseReference();
         /*void processGeneric();
         void generateTypeVar();
         void parseFunctionAST();*/
+        AbstractSyntaxTreeNode* parseExpression(token_iter tokenIter);
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
     private:
         Token &read(size_t&);
@@ -59,7 +62,7 @@ namespace Seserot {
         std::map<Token*, Scope*> token2scope;
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
-        std::set<std::string> modifiers {
+        const std::set<std::string> modifiers {
                 "final",
                 "static",
                 "public",
@@ -72,13 +75,13 @@ namespace Seserot {
                 "partial",
 
         };
-        std::set<std::string> modifierAccessibility {
+        const std::set<std::string> modifierAccessibility {
                 "public",
                 "protected",
                 "internal",
                 "private"
         };
-        std::set<std::string> modifierMutable {
+        const std::set<const std::string> modifierMutable {
                 "mutable",
                 "immutable"
         };

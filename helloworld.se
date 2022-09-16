@@ -6,7 +6,7 @@ function main() {
     val a = A<Int>(1)
     a.t.toString()
     [1,2,"",1.0] //: List<Object> (自动退化)
-    {a:1} // class { val a : Int }
+    { a : 1 } // class { val a : Int }
     (1, "") //: Tuple<Int, String>
     test()
 }
@@ -62,6 +62,7 @@ function test() {
     await ret1()//1
     ret1() + 2 //: async Int
     await (ret1() + 2) //: Int
+    var
 }
 
 async function ret1(): Int {

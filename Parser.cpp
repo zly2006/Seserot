@@ -9,13 +9,6 @@
 #include <utility>
 #include <stack>
 
-
-/**具体流程
- * reset：不多说
- * scan：扫描所有的符号，同时泛型的临时ClassSymbol也要生成。
- *
- */
-
 namespace Seserot {
     void Parser::reset() {
         for (const auto &item: namespaces) {
@@ -103,6 +96,7 @@ namespace Seserot {
                     if (!namespaces.contains(name)) {
                         namespaces.emplace(name, new NamespaceSymbol(currentScope, name));
                     }
+                    // 华风夏韵，洛水天依。
                     currentFatherSymbol.push(namespaces[name]);
                 }
                 else if (tokens[i].content == "class") {
@@ -206,9 +200,22 @@ namespace Seserot {
                         }
                     } // val
                     else {
+                        if (!(mod & Mutable)) {
+                            //todo: 分配错误码
+                            errorTable.errors.emplace_back(t.start, 0, "var cannot be immutable.");
+                        }
                         mod = static_cast<Modifiers>(mod | Mutable);
                     } // var
                     if (methodSymbol != nullptr) {
+                        auto symbols = (searchSymbol(Symbol::Variable, t.content, currentScope));
+                        if (!symbols.empty()) {
+                            //todo: 分配错误码
+                            std::string msg;
+                            msg += "variable ";
+                            mag += t.content;
+                            msg += " already exists.";
+                            errorTable.errors.emplace_back(t.start, 0, msg.c_str());
+                        }
                         auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod);
                         variables.push_back(pItem);
                     }
@@ -363,11 +370,108 @@ namespace Seserot {
         std::vector<Symbol *> ret;
         if (type & Symbol::Class) {
             for (const auto &item: classes) {
-                if (item.first == name) {
+                if (item.first == name
+                    //|| item.first.substr(item.first.find_last_of('.') == name)
+                        ) {
                     ret.push_back(item.second);
                 }
             }
         }
+        if (type & Symbol::Variable) {
+            for (const auto &item: variables) {
+                if (item->name == name) {
+                    ret.push_back(item);
+                }
+            }
+        }
         return ret;
+    }
+
+    size_t Parser::generateStack(MethodSymbol*methodSymbol) {
+        if (!methodSymbol->genericArgs.empty()) {
+            return 0;
+        }
+        else {
+
+        }
+    }
+
+    struct Computable {
+        enum Type {
+            Integer,
+            Floating,
+            String,
+            Symbol,
+            Operator,
+            ASTNode,
+        };
+        Type type;
+        void* data;
+    };
+
+    struct Operator {
+
+    };
+
+    AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter) {
+        std::vector<Computable> s;
+        while (tokenIter != tokens.end()) {
+            if (tokenIter->type == Token::Operator) {
+                if (!s.empty() && s.back().type != Computable::Operator) {
+                    ClassSymbol* type;
+                    AbstractSyntaxTreeNode* node = new AbstractSyntaxTreeNode();
+                    switch (s.back().type) {
+                        case Computable::ASTNode:
+                            type = static_cast<AbstractSyntaxTreeNode*>(s.back().data)->typeInferred;
+
+                            break;
+                        case Computable::Integer:
+                            type = buildIn.longClass;
+                            break;
+                        case Computable::Floating:
+                            type = buildIn.doubleClass;
+                            break;
+                        case Computable::String:
+                            type = buildIn.stringClass;
+                            break;
+                        case Computable::Symbol:{
+                            auto* symbol = static_cast<Symbol*>(s.back().data);
+                            switch (symbol->type) {
+                                case Symbol::Class:
+                                    type = buildIn.classClass;
+                                    break;
+                                case Symbol::Method:
+                                    type = buildIn.functionClass;
+                                    break;
+                                case Symbol::Property:
+                                    type = static_cast<PropertySymbol*>(symbol)->returnType;
+                                    break;
+                                case Symbol::Variable:
+                                    type = static_cast<VariableSymbol*>(symbol)->returnType;
+                                    break;
+                                case Symbol::Value:
+                                case Symbol::GenericClass:
+                                case Symbol::Namespace:
+                                    break;
+                            }
+                            break;
+                        }
+
+                        case Computable::Operator:
+                            break;
+                    }
+                    s.pop_back();
+                    node->typeInferred = type;
+                    node->action = AbstractSyntaxTreeNode::Call;
+                    node->children.push_back(nullptr);//todo: method
+                }
+                else {
+                    tokenIter++;
+                    auto* = parseExpression(tokenIter);
+                }
+                // todo:
+
+            }
+        }
     }
 } // Seserot

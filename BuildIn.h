@@ -34,6 +34,16 @@ namespace Seserot {
                 "Double",
                 {},
                 nullptr, Static | ValueType);
+        ClassSymbol *const stringClass = new ClassSymbol(
+                nullptr,
+                "String",
+                {},
+                nullptr, Static);
+        ClassSymbol *const classClass = new ClassSymbol(
+                nullptr,
+                "Class",
+                {},
+                nullptr, Static);
         ClassSymbol *const functionClass = new ClassSymbol(
                 nullptr,
                 "Function",
@@ -43,6 +53,10 @@ namespace Seserot {
                     ClassSymbol(nullptr, "...", {}, nullptr, None),
                     },
                 nullptr, Static | ValueType);
+
+        TraitSymbol *const numberTrait = new TraitSymbol(
+
+                );
     };
 
 } // Seserot

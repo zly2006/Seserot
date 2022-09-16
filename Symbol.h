@@ -61,11 +61,6 @@ namespace Seserot {
                 : Symbol(scope, type, name, nullptr), childScope(childScope) {}
 
         Scope *childScope;
-
-        void fun() {
-            name = "";
-
-        }
     };
 
     struct NamespaceSymbol : SymbolWithChildren {
@@ -74,6 +69,8 @@ namespace Seserot {
                 const std::string &name)
                 : SymbolWithChildren(scope, Namespace, name, nullptr) {}
     };
+
+    struct TraitSymbol;
 
     struct ClassSymbol : SymbolWithChildren {
         ClassSymbol(
@@ -94,6 +91,8 @@ namespace Seserot {
          * 弃用
          */
         ClassSymbol *closureFather;
+        std::vector<TraitSymbol*> traits;
+        size_t size;
 
         [[nodiscard]] std::string toString() const {
             std::string ret;
@@ -103,6 +102,11 @@ namespace Seserot {
             ret += name;
             return ret;
         }
+    };
+
+    struct TraitSymbol : SymbolWithChildren {
+        Modifiers modifiers;
+        std::vector<ClassSymbol> genericArgs;
     };
 
     struct MethodSymbol : SymbolWithChildren {
