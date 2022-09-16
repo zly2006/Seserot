@@ -15,6 +15,7 @@
 namespace Seserot {
 
     class AbstractSyntaxTreeNode {
+    public:
         enum Actions {
             Add,
             Subtract,

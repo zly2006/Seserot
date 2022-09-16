@@ -36,7 +36,7 @@ namespace Seserot {
     struct Symbol {
         enum Type {
             Class = 1,
-            GenericClass = 2,
+            Trait = 2,
             Method = 4,
             Property = 8,
             Value = 16,
@@ -48,8 +48,7 @@ namespace Seserot {
         Symbol *father;
         Type type;
 
-        explicit Symbol(Seserot::Scope *scope, Type type, std::string name, Symbol *father)
-                : scope(scope), type(type), name(std::move(name)), father(father) {}
+        Symbol(Seserot::Scope *scope, Type type, std::string name, Symbol *father);
     };
 
     struct SymbolWithChildren : Symbol {
@@ -57,8 +56,7 @@ namespace Seserot {
                 Scope *scope,
                 Type type,
                 const std::string &name,
-                Scope *childScope)
-                : Symbol(scope, type, name, nullptr), childScope(childScope) {}
+                Scope *childScope);
 
         Scope *childScope;
     };
@@ -66,8 +64,7 @@ namespace Seserot {
     struct NamespaceSymbol : SymbolWithChildren {
         NamespaceSymbol(
                 Scope *scope,
-                const std::string &name)
-                : SymbolWithChildren(scope, Namespace, name, nullptr) {}
+                const std::string &name);
     };
 
     struct TraitSymbol;
@@ -75,15 +72,11 @@ namespace Seserot {
     struct ClassSymbol : SymbolWithChildren {
         ClassSymbol(
                 Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                Modifiers modifiers)
-                : SymbolWithChildren(scope, Class, name, nullptr),
-                  genericArgs(std::move(genericArgs)), closureFather(closureFather), modifiers(modifiers) {}
+                Modifiers modifiers);
 
         ClassSymbol(
                 Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                int modifiers)
-                : SymbolWithChildren(scope, Class, name, nullptr),
-                  genericArgs(std::move(genericArgs)), closureFather(closureFather), modifiers((Modifiers) modifiers) {}
+                int modifiers);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;
@@ -92,19 +85,14 @@ namespace Seserot {
          */
         ClassSymbol *closureFather;
         std::vector<TraitSymbol*> traits;
-        size_t size;
+        size_t size = 0;
 
-        [[nodiscard]] std::string toString() const {
-            std::string ret;
-            if (modifiers & Modifiers::Static) ret += "static ";
-            if (modifiers & Modifiers::Final) ret += "final ";
-            if (closureFather != nullptr) ret += closureFather->name + "::";
-            ret += name;
-            return ret;
-        }
+        [[nodiscard]] std::string toString() const;
     };
 
     struct TraitSymbol : SymbolWithChildren {
+        TraitSymbol(Scope *scope, const std::string &name, Modifiers modifiers);
+
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;
     };
@@ -112,10 +100,7 @@ namespace Seserot {
     struct MethodSymbol : SymbolWithChildren {
         MethodSymbol(
                 Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                std::vector<ClassSymbol *> args, ClassSymbol *returnType)
-                : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),
-                  genericArgs(std::move(genericArgs)),
-                  args(std::move(args)), stackSize(0), returnType(returnType) {}
+                std::vector<ClassSymbol *> args, ClassSymbol *returnType);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
@@ -125,8 +110,7 @@ namespace Seserot {
     };
 
     struct VariableSymbol : Symbol {
-        VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers)
-                : Symbol(scope, Variable, name, father), modifiers(modifiers) {}
+        VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers);
         ClassSymbol* returnType = nullptr;
         Modifiers modifiers;
     };
@@ -134,7 +118,7 @@ namespace Seserot {
     struct PropertySymbol : Symbol {
         PropertySymbol(
                 Scope *scope, const std::string &name, Symbol *father,
-                Modifiers modifiers) : Symbol(scope, Property, name, father), modifiers(modifiers) {}
+                Modifiers modifiers);
         Modifiers modifiers;
         ClassSymbol* returnType = nullptr;
         MethodSymbol* getter = nullptr;

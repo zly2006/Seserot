@@ -50,11 +50,10 @@ namespace Seserot {
         /*void processGeneric();
         void generateTypeVar();
         void parseFunctionAST();*/
-        AbstractSyntaxTreeNode* parseExpression(token_iter tokenIter);
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
     private:
         Token &read(size_t&);
-        std::vector<Symbol*> searchSymbol(Symbol::Type, std::string, Scope*);
+        std::vector<Symbol*> searchSymbol(Symbol::Type, const std::string&, Scope*);
         static ClassSymbol* currentClassSymbol(Symbol*);
         static MethodSymbol* currentMethodSymbol(Symbol*);
 
@@ -86,6 +85,7 @@ namespace Seserot {
                 "immutable"
         };
 
+        AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter);
     };
 
 } // Seserot

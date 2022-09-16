@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.21)
-project(Seserot_gen0)
+project(Seserot)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(
+add_executable(Seserot
         main.cpp
-        Lexer.cpp Lexer.h
-        ErrorTable.cpp ErrorTable.h
-        CompilerError.cpp CompilerError.h
-        Parser.cpp Parser.h
-        BuildIn.cpp BuildIn.h
-        AbstractSyntaxTreeNode.cpp AbstractSyntaxTreeNode.h
-        ByteCodeWriter.cpp ByteCodeWriter.h
+        Lexer.cpp
+        ErrorTable.cpp
+        CompilerError.cpp
+        Parser.cpp
+        BuildIn.cpp
+        AbstractSyntaxTreeNode.cpp
+        ByteCodeWriter.cpp
         Symbol.cpp)
 

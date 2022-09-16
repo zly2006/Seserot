@@ -49,16 +49,17 @@ namespace Seserot {
     };
 
     struct Scope {
-        Scope(Scope *father, SourcePosition start, SourcePosition stop) : father(father), start(start), stop(stop) {}
+        Scope(Scope *father, SourcePosition start, SourcePosition stop) : father(father), start(std::move(start)), stop(std::move(stop)) {}
 
-        bool inside(Scope* father) {
+        bool inside(Scope* scope) {
+            assert(scope != nullptr);
             Scope* cur = this;
-            while (cur->father != nullptr && cur->father != father) cur = cur->father;
-            return cur->father == father;
+            while (cur->father != nullptr && cur->father != scope) cur = cur->father;
+            return cur->father == scope;
         }
 
-        Scope& newChildren(SourcePosition start, SourcePosition stop) {
-            auto* p = new Scope(this, start, stop);
+        Scope& newChildren(SourcePosition _start, SourcePosition _stop) {
+            auto* p = new Scope(this, std::move(_start), std::move(_stop));
             children.push_back(p);
             return *p;
         }

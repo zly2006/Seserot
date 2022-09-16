@@ -189,7 +189,8 @@ namespace Seserot {
                     methods.emplace(name, methodSymbol);
                 }
                 else if (tokens[i].content == "var" || tokens[i].content == "val") {
-                    auto mod = parseModifiers(tokens.begin() + i);
+                    auto mod = parseModifiers(tokens.begin() + i,
+                                              tokens[i].content == "var" ? Mutable : None);
                     auto& t = read(i);
                     auto* classSymbol = currentClassSymbol(currentFatherSymbol.top());
                     auto* methodSymbol = currentMethodSymbol(currentFatherSymbol.top());
@@ -199,20 +200,14 @@ namespace Seserot {
                             errorTable.errors.emplace_back(t.start, 0, "val cannot be mutable.");
                         }
                     } // val
-                    else {
-                        if (!(mod & Mutable)) {
-                            //todo: 分配错误码
-                            errorTable.errors.emplace_back(t.start, 0, "var cannot be immutable.");
-                        }
-                        mod = static_cast<Modifiers>(mod | Mutable);
-                    } // var
                     if (methodSymbol != nullptr) {
-                        auto symbols = (searchSymbol(Symbol::Variable, t.content, currentScope));
+                        auto symbols = searchSymbol(Symbol::Variable, t.content, currentScope);
+
                         if (!symbols.empty()) {
                             //todo: 分配错误码
                             std::string msg;
                             msg += "variable ";
-                            mag += t.content;
+                            msg += t.content;
                             msg += " already exists.";
                             errorTable.errors.emplace_back(t.start, 0, msg.c_str());
                         }
@@ -346,7 +341,7 @@ namespace Seserot {
     void Parser::parseReference() {
         for (auto &item: tokens) {
             if (item.type == Token::Name && item.parsed == Token::Ready) {
-                searchSymbol(static_cast<typename Symbol::Type>(65535), item.content, token2scope[&item]);
+                //searchSymbol(static_cast<typename Symbol::Type>(65535), item.content, token2scope[&item]);
                 reference[&item] = nullptr;
                 // todo
             }
@@ -359,6 +354,10 @@ namespace Seserot {
         parseReference();
     }
 
+    /** get the method symbol that contains a specified symbol.
+     * @note
+     * if input is nullptr, return value will be nullptr as well.
+     */
     MethodSymbol *Parser::currentMethodSymbol(Symbol *symbol) {
         while (symbol != nullptr && symbol->type != Symbol::Method) {
             symbol = symbol->father;
@@ -366,20 +365,20 @@ namespace Seserot {
         return (MethodSymbol *)symbol;
     }
 
-    std::vector<Symbol *> Parser::searchSymbol(typename Symbol::Type type, std::string name, Scope* scope) {
+    std::vector<Symbol *> Parser::searchSymbol(typename Symbol::Type type, const std::string& name, Scope* scope) {
+        assert(scope != nullptr);
+        assert(!name.empty());
         std::vector<Symbol *> ret;
         if (type & Symbol::Class) {
             for (const auto &item: classes) {
-                if (item.first == name
-                    //|| item.first.substr(item.first.find_last_of('.') == name)
-                        ) {
+                if (item.first == name && scope->inside(item.second->scope)) {
                     ret.push_back(item.second);
                 }
             }
         }
         if (type & Symbol::Variable) {
             for (const auto &item: variables) {
-                if (item->name == name) {
+                if (item->name == name && scope->inside(item->scope)) {
                     ret.push_back(item);
                 }
             }
@@ -394,6 +393,7 @@ namespace Seserot {
         else {
 
         }
+        return 0;//todo
     }
 
     struct Computable {
@@ -419,7 +419,7 @@ namespace Seserot {
             if (tokenIter->type == Token::Operator) {
                 if (!s.empty() && s.back().type != Computable::Operator) {
                     ClassSymbol* type;
-                    AbstractSyntaxTreeNode* node = new AbstractSyntaxTreeNode();
+                    auto* node = new AbstractSyntaxTreeNode();
                     switch (s.back().type) {
                         case Computable::ASTNode:
                             type = static_cast<AbstractSyntaxTreeNode*>(s.back().data)->typeInferred;
@@ -450,7 +450,7 @@ namespace Seserot {
                                     type = static_cast<VariableSymbol*>(symbol)->returnType;
                                     break;
                                 case Symbol::Value:
-                                case Symbol::GenericClass:
+                                case Symbol::Trait:
                                 case Symbol::Namespace:
                                     break;
                             }
@@ -463,11 +463,11 @@ namespace Seserot {
                     s.pop_back();
                     node->typeInferred = type;
                     node->action = AbstractSyntaxTreeNode::Call;
-                    node->children.push_back(nullptr);//todo: method
+                    node->children.push_back({});//todo: method
                 }
                 else {
                     tokenIter++;
-                    auto* = parseExpression(tokenIter);
+                    auto* expr = parseExpression(tokenIter);
                 }
                 // todo:
 

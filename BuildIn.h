@@ -48,15 +48,17 @@ namespace Seserot {
                 nullptr,
                 "Function",
                 {
-                    ClassSymbol(nullptr, "P", {}, nullptr, None),
-                    ClassSymbol(nullptr, "T", {}, nullptr, None),
-                    ClassSymbol(nullptr, "...", {}, nullptr, None),
-                    },
+                        ClassSymbol(nullptr, "P", {}, nullptr, None),
+                        ClassSymbol(nullptr, "T", {}, nullptr, None),
+                        ClassSymbol(nullptr, "...", {}, nullptr, None),
+                },
                 nullptr, Static | ValueType);
 
         TraitSymbol *const numberTrait = new TraitSymbol(
-
-                );
+                nullptr,
+                "Number",
+                (Modifiers) (Static | ValueType)
+        );
     };
 
 } // Seserot
