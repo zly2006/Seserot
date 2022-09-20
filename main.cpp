@@ -37,7 +37,11 @@ std::optional<int> build(std::filesystem::path path) {
     return 0;
 }
 
-int main() {
+int main(int _argc, char **_argv) {
+    std::vector<std::string> args;
+    for (int i = 1; i < _argc; ++i) {
+        args.emplace_back(_argv[i]);
+    }
     std::cout << "Seserot gen0 "<< sizeof(long)*8<<"bit\n";
     Seserot::ErrorTable errorTable;
     std::ifstream fin("../helloworld.se");

@@ -59,6 +59,15 @@ std::string Seserot::ClassSymbol::toString() const {
     return ret;
 }
 
+bool Seserot::ClassSymbol::operator==(Seserot::ClassSymbol *another) {
+    if (modifiers != another->modifiers) return false;
+    if (size != another->size) return false;
+    if (scope != another->scope) return false;
+    if (traits != another->traits) return false;
+    if (genericArgs.size() != another->genericArgs.size()) return false;
+    return true;
+}
+
 Seserot::PropertySymbol::PropertySymbol(
         Seserot::Scope *scope, const std::string &name, Seserot::Symbol *father, Seserot::Modifiers modifiers) : Symbol(scope, Property, name, father), modifiers(modifiers) {}
 

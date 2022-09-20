@@ -429,63 +429,117 @@ namespace Seserot {
 
     AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter) {
         std::vector<Computable> s;
+        // 1. member access
+        // 2. bracket () []
+        // 3. infix function & function call
+        // 4. * / %
+        // 5. + -
+        // 6. compare
+        // 7. assign
+        // 8. comma
         while (tokenIter != tokens.end()) {
-            if (tokenIter->type == Token::Operator) {
-                if (!s.empty() && s.back().type != Computable::Operator) {
-                    ClassSymbol* type;
-                    auto* node = new AbstractSyntaxTreeNode();
-                    switch (s.back().type) {
-                        case Computable::ASTNode:
-                            type = static_cast<AbstractSyntaxTreeNode*>(s.back().data)->typeInferred;
+            switch (tokenIter->type) {
+                case Token::Operator: {
+                    AbstractSyntaxTreeNode::Actions kind;
+                    std::map<std::string, AbstractSyntaxTreeNode::Actions> actionMap{
+                            {"+", AbstractSyntaxTreeNode::Add},
+                            {"-", AbstractSyntaxTreeNode::Subtract},
+                            {"*", AbstractSyntaxTreeNode::Multiple},
+                            {"/", AbstractSyntaxTreeNode::Divide},
+                            {"%", AbstractSyntaxTreeNode::Mod},
+                    };
+                    if (actionMap.contains(tokenIter->content))
+                        kind = actionMap.at(tokenIter->content);
+                    else
+                        kind = AbstractSyntaxTreeNode::Call;
 
-                            break;
-                        case Computable::Integer:
-                            type = buildIn.longClass;
-                            break;
-                        case Computable::Floating:
-                            type = buildIn.doubleClass;
-                            break;
-                        case Computable::String:
-                            type = buildIn.stringClass;
-                            break;
-                        case Computable::Symbol:{
-                            auto* symbol = static_cast<Symbol*>(s.back().data);
-                            switch (symbol->type) {
-                                case Symbol::Class:
-                                    type = buildIn.classClass;
-                                    break;
-                                case Symbol::Method:
-                                    type = buildIn.functionClass;
-                                    break;
-                                case Symbol::Property:
-                                    type = static_cast<PropertySymbol*>(symbol)->returnType;
-                                    break;
-                                case Symbol::Variable:
-                                    type = static_cast<VariableSymbol*>(symbol)->returnType;
-                                    break;
-                                case Symbol::Value:
-                                case Symbol::Trait:
-                                case Symbol::Namespace:
-                                    break;
-                            }
-                            break;
+                    if (tokenIter->type == Token::Operator &&
+                        (tokenIter->content == "(" || tokenIter->content == "[")) {
+                        // brackets
+                        s.push_back({Computable::Operator, &tokenIter->content});
+                        tokenIter++;
+                        auto *expr = parseExpression(tokenIter);
+                        if (expr == nullptr) {
+                            // todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
+                            errorTable.interrupt();
                         }
-
-                        case Computable::Operator:
-                            break;
+                        s.push_back({Computable::ASTNode, expr});
                     }
-                    s.pop_back();
-                    node->typeInferred = type;
-                    node->action = AbstractSyntaxTreeNode::Call;
-                    node->children.push_back({});//todo: method
-                }
-                else {
-                    tokenIter++;
-                    auto* expr = parseExpression(tokenIter);
-                }
-                // todo:
+                    else if (!s.empty() && s.back().type != Computable::Operator) {
+                        // function
+                        // this field's purpose is to identify which function should be called.
+                        ClassSymbol *type = nullptr;
+                        auto *node = new AbstractSyntaxTreeNode();
+                        switch (s.back().type) {
+                            case Computable::ASTNode:
+                                type = static_cast<AbstractSyntaxTreeNode *>(s.back().data)->typeInferred;
+                                break;
+                            case Computable::Integer:
+                                type = buildIn.longClass;
+                                break;
+                            case Computable::Floating:
+                                type = buildIn.doubleClass;
+                                break;
+                            case Computable::String:
+                                type = buildIn.stringClass;
+                                break;
+                            case Computable::Symbol: {
+                                auto *symbol = static_cast<Symbol *>(s.back().data);
+                                switch (symbol->type) {
+                                    case Symbol::Class:
+                                        type = buildIn.classClass;
+                                        break;
+                                    case Symbol::Method:
+                                        type = buildIn.functionClass;
+                                        break;
+                                    case Symbol::Property:
+                                        type = ((PropertySymbol *) symbol)->returnType;
+                                        break;
+                                    case Symbol::Variable:
+                                        type = ((VariableSymbol *) symbol)->returnType;
+                                        break;
+                                    case Symbol::Value:
+                                    case Symbol::Trait:
+                                    case Symbol::Namespace:
+                                        break;
+                                }
+                                break;
+                            }
 
+                            case Computable::Operator:
+                                //impossible
+                                break;
+                        }
+                        s.pop_back();
+                        node->typeInferred = type;
+                        node->action = AbstractSyntaxTreeNode::Call;
+                        node->children.push_back({});//todo: method
+                        return node;
+                    }
+                    else {
+
+                    }
+                    // todo:
+                    break;
+                }
+                case Token::Name: {
+                    //infix function
+                    if (reference.contains(tokenIter.base())) {
+                        auto symbol = reference[tokenIter.base()];
+                        if (symbol->type == Symbol::Method) {
+                            auto function = (MethodSymbol*)symbol;
+                            if (function->modifiers & Infix) {
+                                // infix call
+                            }
+                        }
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
         }
+        return nullptr;
     }
 } // Seserot

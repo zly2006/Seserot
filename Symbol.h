@@ -37,6 +37,7 @@ namespace Seserot {
         PrivateProtected = 512,
         PrivateInternal = 1024,
         Inner = 2048,
+        Infix = 4096,
     };
 
     bool isPrivateModifier(Modifiers);
@@ -101,6 +102,8 @@ namespace Seserot {
         std::vector<TraitSymbol*> traits;
         size_t size = 0;
 
+        bool operator==(ClassSymbol* another);
+
         [[nodiscard]] std::string toString() const;
     };
 
@@ -137,7 +140,7 @@ namespace Seserot {
         ClassSymbol* returnType = nullptr;
         MethodSymbol* getter = nullptr;
         MethodSymbol* setter = nullptr;
-    };
+    };jm `
 }
 
 #endif //SESEROT_GEN0_SYMBOL_H

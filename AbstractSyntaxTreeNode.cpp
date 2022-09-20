@@ -17,9 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "AbstractSyntaxTreeNode.h"
+#include <cassert>
 
 namespace Seserot {
     size_t AbstractSyntaxTreeNode::write(char *buffer) {
+        assert(buffer != nullptr);
         static_assert(sizeof(action) == 4);
         memcpy(buffer, &action, 4);
         unsigned int tmp = children.size();
@@ -34,6 +36,7 @@ namespace Seserot {
     }
 
     void AbstractSyntaxTreeNode::read(char *buffer, size_t len) {
+        assert(buffer != nullptr);
         children.clear();
         memcpy(&action, buffer, 4);
         size_t num;
