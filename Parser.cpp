@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Parser.h"
 #include "Symbol.h"
-#include "BuildIn.h"
 
 #include <utility>
 #include <stack>
+#include <variant>
 
 namespace Seserot {
     void Parser::reset() {
@@ -66,8 +66,9 @@ namespace Seserot {
         // init finish
 
         auto newScope = [&](Token& thisToken) {
-            currentScope = &currentScope->newChildren(thisToken.start,SourcePosition(0,0));
+            currentScope = currentScope->newChildren(thisToken.start,SourcePosition(0,0));
         };
+        // 作用：结束当前scope，检查symbol scope并整理currentFatherSymbol
         auto endScope = [&](Token& thisToken) {
             if (currentScope == nullptr) {
                 errorTable.errors.emplace_back(thisToken.start, 0, "unexpected \'}\'");//todo
@@ -250,6 +251,14 @@ namespace Seserot {
     Parser::Parser(std::vector<Token> tokens, ErrorTable &errorTable)
             : tokens(std::move(tokens)), errorTable(errorTable) {}
 
+    /**
+     * 将一个token前的所有modifier（token形式）解析为Modifier枚举
+     *
+     * 同时，标记这些token的parse状态为Statement
+     * @param it 当前token的迭代器
+     * @param def 默认值，可选
+     * @return Modifier枚举
+     */
     Modifiers Parser::parseModifiers(std::vector<Token>::iterator it, Modifiers def) {
         std::set<std::string_view> ret;
         if (it == tokens.begin()) return None;
@@ -333,6 +342,11 @@ namespace Seserot {
         return (Modifiers)m;
     }
 
+    /**
+     * 读取下一个token并返回读取的结果
+     * @param i 当前在第几个token
+     * @return 下一个token
+     */
     Token &Parser::read(size_t& i) {
         do {
             i++;
@@ -345,6 +359,11 @@ namespace Seserot {
         return tokens[i];
     }
 
+    /**
+     * 当前当最近的ClassSymbol
+     * @param symbol 当前symbol，根据这个向上寻找
+     * @return symbol为null或没有找到，返回nullptr；否则是ClassSymbol的指针
+     */
     ClassSymbol *Parser::currentClassSymbol(Symbol* symbol) {
         while (symbol != nullptr && symbol->type != Symbol::Class) {
             symbol = symbol->father;
@@ -352,6 +371,9 @@ namespace Seserot {
         return (ClassSymbol *)symbol;
     }
 
+    /**@todo
+     * 全都todo
+     */
     void Parser::parseReference() {
         for (auto &item: tokens) {
             if (item.type == Token::Name && item.parsed == Token::Ready) {
@@ -362,6 +384,8 @@ namespace Seserot {
         }
     }
 
+    /**正常的parser流程的啦
+     */
     void Parser::parse() {
         reset();
         scan();
@@ -410,115 +434,133 @@ namespace Seserot {
         return 0;//todo
     }
 
-    struct Computable {
-        enum Type {
-            Integer,
-            Floating,
-            String,
-            Symbol,
-            Operator,
-            ASTNode,
+    AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter, char untilBracket = '\0') {
+        std::vector<std::variant<AbstractSyntaxTreeNode, std::string>> s;
+        const std::map<std::string, AbstractSyntaxTreeNode::Actions> actionMap{
+                {"+", AbstractSyntaxTreeNode::Add},
+                {"-", AbstractSyntaxTreeNode::Subtract},
+                {"*", AbstractSyntaxTreeNode::Multiple},
+                {"/", AbstractSyntaxTreeNode::Divide},
+                {"%", AbstractSyntaxTreeNode::Mod},
+                {"&&",AbstractSyntaxTreeNode::LogicAnd},
+                {"||",AbstractSyntaxTreeNode::LogicOr},
+                {"!",AbstractSyntaxTreeNode::LogicNot},
+                {"&",AbstractSyntaxTreeNode::BitAnd},
+                {"|",AbstractSyntaxTreeNode::BitOr},
+                {"~",AbstractSyntaxTreeNode::BitNot},
+                {"<<",AbstractSyntaxTreeNode::LeftShift},
+                {">>",AbstractSyntaxTreeNode::RightShift},
+                {"^",AbstractSyntaxTreeNode::BitXor}
         };
-        Type type;
-        void* data;
-    };
-
-    struct Operator {
-
-    };
-
-    AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter) {
-        std::vector<Computable> s;
+        const std::vector<std::set<AbstractSyntaxTreeNode::Actions>> priority {
+                {
+                    AbstractSyntaxTreeNode::Multiple,
+                    AbstractSyntaxTreeNode::Divide,
+                    AbstractSyntaxTreeNode::Mod,
+                 },
+                {
+                    AbstractSyntaxTreeNode::Add,
+                    AbstractSyntaxTreeNode::Subtract,
+                },
+                {
+                    AbstractSyntaxTreeNode::BitAnd,
+                    AbstractSyntaxTreeNode::BitOr,
+                    AbstractSyntaxTreeNode::BitNot,
+                    AbstractSyntaxTreeNode::BitXor,
+                    AbstractSyntaxTreeNode::RightShift,
+                    AbstractSyntaxTreeNode::LeftShift,
+                },
+                {
+                    AbstractSyntaxTreeNode::LogicNot,
+                    AbstractSyntaxTreeNode::LogicAnd,
+                    AbstractSyntaxTreeNode::LogicOr,
+                },
+                {
+                    //赋值
+                }
+        };
+        const std::set<AbstractSyntaxTreeNode::Actions> unary = {
+                AbstractSyntaxTreeNode::BitNot,
+                AbstractSyntaxTreeNode::LogicNot,
+        };
         // 1. member access
         // 2. bracket () []
         // 3. infix function & function call
         // 4. * / %
         // 5. + -
+        //    bit
         // 6. compare
         // 7. assign
         // 8. comma
+
+        //todo:
+        // member access
+
+        // 将tokens解析到s
+        // function & bracket
+        /* Q: tokenIter何时++？
+         * A: 各自独立，直到无法解析
+         */
         while (tokenIter != tokens.end()) {
             switch (tokenIter->type) {
-                case Token::Operator: {
-                    AbstractSyntaxTreeNode::Actions kind;
-                    std::map<std::string, AbstractSyntaxTreeNode::Actions> actionMap{
-                            {"+", AbstractSyntaxTreeNode::Add},
-                            {"-", AbstractSyntaxTreeNode::Subtract},
-                            {"*", AbstractSyntaxTreeNode::Multiple},
-                            {"/", AbstractSyntaxTreeNode::Divide},
-                            {"%", AbstractSyntaxTreeNode::Mod},
-                    };
-                    if (actionMap.contains(tokenIter->content))
-                        kind = actionMap.at(tokenIter->content);
-                    else
-                        kind = AbstractSyntaxTreeNode::Call;
-
-                    if (tokenIter->type == Token::Operator &&
-                        (tokenIter->content == "(" || tokenIter->content == "[")) {
-                        // brackets
-                        s.push_back({Computable::Operator, &tokenIter->content});
+                case Token::NewLine:
+                    if (!untilBracket && s.back().index() == 0)
+                        // 为什么这么写？
+                        // 注意此时做不到太精细的分析，同时我们允许用换行分割表达式，那就只能这样了
+                        // 对于if，函数之类的，由于括号会继续解析
                         tokenIter++;
-                        auto *expr = parseExpression(tokenIter);
-                        if (expr == nullptr) {
-                            // todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
+                        break;
+                case Token::Operator: {
+                    if (tokenIter->content == ";") {
+                        if (!untilBracket) {
+                            //todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "The expression is not ended but "
+                                                                                "found a semicolon.");
                             errorTable.interrupt();
                         }
-                        s.push_back({Computable::ASTNode, expr});
+                        break;
                     }
-                    else if (!s.empty() && s.back().type != Computable::Operator) {
+
+                    AbstractSyntaxTreeNode::Actions action;
+
+                    if (actionMap.contains(tokenIter->content))
+                        action = actionMap.at(tokenIter->content);
+                    else
+                        action = AbstractSyntaxTreeNode::Call;
+
+                    if (!s.empty() && s.back().index() == 0 &&
+                        tokenIter->type == Token::Operator && tokenIter->content == "(") {
                         // function
                         // this field's purpose is to identify which function should be called.
                         ClassSymbol *type = nullptr;
                         auto *node = new AbstractSyntaxTreeNode();
-                        switch (s.back().type) {
-                            case Computable::ASTNode:
-                                type = static_cast<AbstractSyntaxTreeNode *>(s.back().data)->typeInferred;
-                                break;
-                            case Computable::Integer:
-                                type = buildIn.longClass;
-                                break;
-                            case Computable::Floating:
-                                type = buildIn.doubleClass;
-                                break;
-                            case Computable::String:
-                                type = buildIn.stringClass;
-                                break;
-                            case Computable::Symbol: {
-                                auto *symbol = static_cast<Symbol *>(s.back().data);
-                                switch (symbol->type) {
-                                    case Symbol::Class:
-                                        type = buildIn.classClass;
-                                        break;
-                                    case Symbol::Method:
-                                        type = buildIn.functionClass;
-                                        break;
-                                    case Symbol::Property:
-                                        type = ((PropertySymbol *) symbol)->returnType;
-                                        break;
-                                    case Symbol::Variable:
-                                        type = ((VariableSymbol *) symbol)->returnType;
-                                        break;
-                                    case Symbol::Value:
-                                    case Symbol::Trait:
-                                    case Symbol::Namespace:
-                                        break;
-                                }
-                                break;
-                            }
-
-                            case Computable::Operator:
-                                //impossible
-                                break;
-                        }
                         s.pop_back();
                         node->typeInferred = type;
                         node->action = AbstractSyntaxTreeNode::Call;
                         node->children.push_back({});//todo: method
                         return node;
                     }
+                    else if (tokenIter->type == Token::Operator && tokenIter->content == "(") {
+                        // brackets
+                        auto *expr = parseExpression(tokenIter);
+                        if (expr == nullptr) {
+                            // todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
+                            errorTable.interrupt();
+                        }
+                        if (tokenIter->type == Token::Operator && tokenIter->content == ")") {
+                            s.emplace_back(*expr);
+                            tokenIter++;
+                        }
+                        else {
+                            // todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
+                            errorTable.interrupt();
+                        }
+                    }
                     else {
-
+                        s.emplace_back(tokenIter->content);
+                        tokenIter++;
                     }
                     // todo:
                     break;
@@ -536,10 +578,67 @@ namespace Seserot {
                     }
                     break;
                 }
+                case Token::Number: {
+                    // parse number
+                    break;
+                }
+                case Token::Literal: {
+                    auto* p = new AbstractSyntaxTreeNode;
+                    p->action = AbstractSyntaxTreeNode::LiteralString;
+
+                    break;
+                }
                 default:
                     break;
             }
         }
+
+        for (int i = 0; i < priority.size(); ++i) {
+            auto &set = priority.at(i);
+            for (auto it = s.begin(); it != s.end(); it++) {
+                if (it->index() == 1) {
+                    AbstractSyntaxTreeNode::Actions action = actionMap.at(std::get<std::string>(*it));
+                    if (set.contains(action)) {
+                        if (unary.contains(action)) {
+                            AbstractSyntaxTreeNode node;
+                            node.action = action;
+                            // it -> op
+                            it = s.erase(it);
+                            // it -> obj
+                            node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
+                            it = s.erase(it);
+                            // it -> obj+1
+                            it = s.insert(it, node);
+                            // it -> new obj
+                            it++;
+                            // it -> new obj+1 (aka obj+1)
+                        }
+                    }
+                    else if (it == s.begin() || it + 1 == s.end()) {//双目运算符但是ASTNode不够
+                        //todo: 分配错误码
+                        errorTable.interrupt();
+                    }
+                    else {
+                        AbstractSyntaxTreeNode node;
+                        node.action = action;
+                        // it -> op
+                        it--;
+                        // it -> op-1
+                        node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
+                        it = s.erase(it);
+                        // it -> op
+                        it = s.erase(it);
+                        // it -> op+1
+                        node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
+                        it = s.erase(it);
+                        // it -> op+2
+                        it = s.insert(it, node);
+                        it++;
+                    }
+                }
+            }
+        }
+
         return nullptr;
     }
 } // Seserot

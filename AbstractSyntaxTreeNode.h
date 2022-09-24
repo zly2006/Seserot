@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#ifndef SESEROT_GEN0_ABSTRACTSYNTAXTREENODE_H
-#define SESEROT_GEN0_ABSTRACTSYNTAXTREENODE_H
+#ifndef SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
+#define SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
 #include <utility>
 #include <vector>
 #include <iostream>
@@ -37,17 +37,44 @@ namespace Seserot {
             Divide,
             Mod,
             Call,
+            LogicAnd,
+            LogicOr,
+            LogicNot,
+            BitAnd,
+            BitOr,
+            BitNot,
+            BitXor,
+            LeftShift,
+            RightShift,
             CallVirtual,
             Assignment,
+            LiteralShort,
+            LiteralInt,
+            LiteralLong,
+            LiteralDouble,
+            LiteralString,
+            NewInstance,
             Error,
         };
+        enum Tags {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
+            None = 0,
+#pragma clang diagnostic pop
+            Completed = 1
+        };
+        Tags tag = Tags::None;
         Actions action = Error;
         std::vector<AbstractSyntaxTreeNode> children = {};
         size_t write(char*);
         void read(char*, size_t);
+        // char*是用来保证new/delete的，所以new的时候必须用char
+        char* data = nullptr;
+        size_t dataLength = 0;
         ClassSymbol* typeInferred;
+        ~AbstractSyntaxTreeNode();
     };
 
 } // Seserot
 
-#endif //SESEROT_GEN0_ABSTRACTSYNTAXTREENODE_H
+#endif //SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H

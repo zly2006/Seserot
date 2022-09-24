@@ -53,4 +53,10 @@ namespace Seserot {
             //todo
         }
     }
+
+    AbstractSyntaxTreeNode::~AbstractSyntaxTreeNode() {
+        if (data != nullptr && dataLength != 0) {
+            delete data;
+        }
+    }
 } // Seserot

@@ -54,6 +54,7 @@ std::string Seserot::ClassSymbol::toString() const {
     std::string ret;
     if (modifiers & Modifiers::Static) ret += "static ";
     if (modifiers & Modifiers::Final) ret += "final ";
+    // Kokomi~~~
     if (closureFather != nullptr) ret += closureFather->name + "::";
     ret += name;
     return ret;

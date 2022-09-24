@@ -23,6 +23,7 @@ namespace Seserot {
     Lexer::State Lexer::parseNextChar() {
         if (cursor> fileContent.length()) {
             errorTable.interrupt("Cursor is after the end.");
+            return FatalError;
         }
         if (state == String) {
             if (fileContent[cursor] == '\\') {
@@ -46,7 +47,12 @@ namespace Seserot {
             }
         }
         else if (state == MultiLineString) {
+            /*todo:
+             * 1. 多行字符串的识别和终止存在问题
+             * 2. 转义字符问题
+             */
             if (fileContent.length() > cursor + 2
+                && fileContent[cursor + 0] == '\"'
                 && fileContent[cursor + 1] == '\"'
                 && fileContent[cursor + 2] == '\"') {
                 tokens.push_back(Token{
@@ -216,37 +222,37 @@ namespace Seserot {
         string.reserve(content.length());
         for (size_t i = 0; i < content.length(); i++) {
             if (content[i] == '\\') {
-                i ++;
+                i++;
                 if (i == content.length()) {
                     errorTable.interrupt();
                 }
                 switch (content[i]) {
                     case 'a':
-                        string += '\a';
+                        string.push_back('\a');
                     case 'n':
-                        string += '\n';
+                        string.push_back('\n');
                     case 't':
-                        string += '\t';
+                        string.push_back('\t');
                     case 'r':
-                        string += '\r';
+                        string.push_back('\r');
                     case 'f':
-                        string += '\f';
+                        string.push_back('\f');
                     case 'v':
-                        string += '\v';
+                        string.push_back('\v');
                     case '0':
-                        string += '\0';
+                        string.push_back('\0');
                     case '\'':
-                        string += '\'';
+                        string.push_back('\'');
                     case '\"':
-                        string += '\"';
+                        string.push_back('\"');
                     case '\\':
-                        string += '\\';
+                        string.push_back('\\');
                     case 'x': {
                         if (i + 2 < content.length()) {
                             char a[2];
-                            a[0] = content[i+1];
-                            a[1] = content[i+2];
-                            for (char & j : a) {
+                            a[0] = content[i + 1];
+                            a[1] = content[i + 2];
+                            for (char &j: a) {
                                 if (j <= '9' && j >= '0')
                                     j -= '0';
                                 else if (j <= 'f' && j >= 'a')
@@ -255,20 +261,25 @@ namespace Seserot {
                                     j -= 'A';
                                 else errorTable.interrupt();
                             }
-                        } else {
+                            unsigned char c = a[0] << 4 | a[1];
+                            string.push_back(c);
+                        }
+                        else {
                             errorTable.interrupt("parse literal: HEX");
                         }
                     }
                     case 'u': {
                         if (i + 4 < content.length()) {
                             errorTable.interrupt("TODO");
-                        } else {
+                        }
+                        else {
                             errorTable.interrupt("parse literal: Unicode");
                         }
                     }
                 }
-            } else {
-                string += content[i];
+            }
+            else {
+                string.push_back(content[i]);
             }
         }
         return string;

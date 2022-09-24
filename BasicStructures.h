@@ -73,10 +73,10 @@ namespace Seserot {
             return cur->father == scope;
         }
 
-        Scope& newChildren(SourcePosition _start, SourcePosition _stop) {
+        Scope* newChildren(SourcePosition _start, SourcePosition _stop) {
             auto* p = new Scope(this, std::move(_start), std::move(_stop));
             children.push_back(p);
-            return *p;
+            return p;
         }
 
         Scope *father = nullptr;

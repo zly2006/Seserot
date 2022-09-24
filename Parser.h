@@ -70,6 +70,7 @@ namespace Seserot {
         std::vector<Symbol*> searchSymbol(Symbol::Type, const std::string&, Scope*);
         static ClassSymbol* currentClassSymbol(Symbol*);
         static MethodSymbol* currentMethodSymbol(Symbol*);
+        AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter, char);
 
         std::map<Token*, Symbol*> reference;
         std::map<Token*, Scope*> token2scope;
@@ -98,8 +99,6 @@ namespace Seserot {
                 "mutable",
                 "immutable"
         };
-
-        AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter);
     };
 
 } // Seserot

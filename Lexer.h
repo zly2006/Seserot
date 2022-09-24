@@ -43,6 +43,7 @@ namespace Seserot {
             Comment,
             MultiLineComment,
             Number,
+            Character,
             Operator,
         };
         State state = Ready;
