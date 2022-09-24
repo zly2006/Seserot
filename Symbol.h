@@ -140,7 +140,7 @@ namespace Seserot {
         ClassSymbol* returnType = nullptr;
         MethodSymbol* getter = nullptr;
         MethodSymbol* setter = nullptr;
-    };jm `
+    };
 }
 
 #endif //SESEROT_GEN0_SYMBOL_H
