@@ -27,6 +27,6 @@ namespace Seserot {
         return std::string(s); // NOLINT(modernize-return-braced-init-list)
     }
 
-    CompilerError::CompilerError(const SourcePosition &where, size_t code, std::string message, std::string category)
-            : where(where), code(code), message(std::move(message)), category(std::move(category)) {}
+    CompilerError::CompilerError(SourcePosition where, size_t code, std::string message, std::string category)
+            : where(std::move(where)), code(code), message(std::move(message)), category(std::move(category)) {}
 } // Seserot

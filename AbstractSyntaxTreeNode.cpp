@@ -23,13 +23,16 @@ namespace Seserot {
     size_t AbstractSyntaxTreeNode::write(char *buffer) {
         assert(buffer != nullptr);
         static_assert(sizeof(action) == 4);
-        memcpy(buffer, &action, 4);
+        static_assert(sizeof(long) == 8);
+        memcpy(buffer, &action, 4);//len = 4
+        memcpy(buffer + 4, &dataLength, 8);
+        memcpy(buffer + 12, data, dataLength);
         unsigned int tmp = children.size();
-        memcpy(buffer + 4, &tmp, 4);
-        size_t len = 8 + children.size() * 4;
+        memcpy(buffer + 12 + dataLength, &tmp, 8);//len = 12
+        size_t len = 20 + dataLength + children.size() * 8;
         for (int i = 0; i < children.size(); ++i) {
             size_t added = children[i].write(buffer + len);
-            memcpy(buffer + 8 + i * 4, &added, 4);
+            memcpy(buffer + 20 + dataLength + i * 8, &added, 8);
             len += added;
         }
         return 0;
@@ -40,11 +43,11 @@ namespace Seserot {
         children.clear();
         memcpy(&action, buffer, 4);
         size_t num;
-        memcpy(&num, buffer + 4, 4);
-        size_t offset = 8 + num * 4;
+        memcpy(&num, buffer + 4, 8);
+        size_t offset = 12 + num * 8;
         for (int i = 0; i < num; ++i) {
-            unsigned int len;
-            memcpy(&len, buffer + 8 + i * 4, 4);
+            size_t len;
+            memcpy(&len, buffer + 12 + i * 8, 8);
             children.emplace_back();
             children.back().read(buffer + offset, len);
             offset += len;
@@ -59,4 +62,37 @@ namespace Seserot {
             delete data;
         }
     }
+
+    AbstractSyntaxTreeNode::AbstractSyntaxTreeNode(AbstractSyntaxTreeNode &&node) noexcept {
+        data = node.data;
+        dataLength = node.dataLength;
+        action = node.action;
+        children = std::vector(node.children);
+        typeInferred = node.typeInferred;
+        node.data = nullptr;
+    }
+
+    AbstractSyntaxTreeNode::AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode& node) {
+        data = new char[node.dataLength];
+        dataLength = node.dataLength;
+        action = node.action;
+        children = std::vector(node.children);
+        typeInferred = node.typeInferred;
+        memcpy(data, node.data, node.dataLength);
+    }
+
+    AbstractSyntaxTreeNode &AbstractSyntaxTreeNode::operator=(const AbstractSyntaxTreeNode &node) {
+        if (this == &node) {
+            return *this;
+        }
+        data = new char[node.dataLength];
+        dataLength = node.dataLength;
+        action = node.action;
+        children = std::vector(node.children);
+        typeInferred = node.typeInferred;
+        memcpy(data, node.data, node.dataLength);
+        return *this;
+    }
+
+    AbstractSyntaxTreeNode::AbstractSyntaxTreeNode() = default;
 } // Seserot

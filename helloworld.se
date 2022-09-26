@@ -62,6 +62,9 @@ function test() {
     await ret1()//1
     ret1() + 2 //: async Int
     await (ret1() + 2) //: Int
+    llvm {
+        //...
+    }
 }
 
 async function ret1(): Int {

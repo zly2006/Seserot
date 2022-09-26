@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <map>
 #include <unordered_map>
 #include <set>
+#include <any>
 #include "AbstractSyntaxTreeNode.h"
 
 namespace Seserot {
@@ -44,6 +45,7 @@ namespace Seserot {
 
     class Parser {
     private:
+        friend int ::main(int, char**);
         using token_iter = std::vector<Token>::iterator;
     public:
         BuildIn buildIn;
@@ -59,6 +61,7 @@ namespace Seserot {
         void parse();
         void reset();
         void scan();
+
         size_t generateStack(MethodSymbol*);
         void parseReference();
         /*void processGeneric();
@@ -70,7 +73,14 @@ namespace Seserot {
         std::vector<Symbol*> searchSymbol(Symbol::Type, const std::string&, Scope*);
         static ClassSymbol* currentClassSymbol(Symbol*);
         static MethodSymbol* currentMethodSymbol(Symbol*);
-        AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter, char);
+        AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
+        static size_t string2FitNumber(const std::string &str, char *ptr, bool = false);
+        Token &expectIdentifier(size_t &pos);
+        Token &expectOperator(size_t &pos);
+        bool expectIdentifier(size_t &pos, const std::string& content);
+
+        template<class T>
+        std::optional<T> convertToNumber(const std::string& str);
 
         std::map<Token*, Symbol*> reference;
         std::map<Token*, Scope*> token2scope;

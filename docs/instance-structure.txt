@@ -1,0 +1,3 @@
+normal type
+48bit class id
+16bit ?

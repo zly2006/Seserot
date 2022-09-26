@@ -1,3 +1,5 @@
+1000 compiler internal error
+     please give a feedback when you see this error.
 2011 namespace not found.
 e.g.
 namespace {}

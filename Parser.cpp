@@ -18,10 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Parser.h"
 #include "Symbol.h"
+#include "src/utils/sum_string.h"
 
 #include <utility>
 #include <stack>
 #include <variant>
+#include <cmath>
+#include <sstream>
+#include <any>
 
 namespace Seserot {
     void Parser::reset() {
@@ -73,6 +77,7 @@ namespace Seserot {
             if (currentScope == nullptr) {
                 errorTable.errors.emplace_back(thisToken.start, 0, "unexpected \'}\'");//todo
                 errorTable.interrupt();
+                return;
             }
             currentScope->stop = thisToken.start;
             if (currentFatherSymbol.top()->childScope == currentScope) {
@@ -119,7 +124,7 @@ namespace Seserot {
                         errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
                         errorTable.interrupt("scanning classes");
                     }
-                    auto mod = parseModifiers(tokens.begin() + i);
+                    auto mod = parseModifiers(tokens.begin() + (long)i);
                     if (!(mod & Inner)) {
                         mod = static_cast<Modifiers>(mod | Static);
                     }
@@ -151,7 +156,7 @@ namespace Seserot {
                         errorTable.errors.emplace_back(tokens[i].stop, 2013, "method name not found.");
                         errorTable.interrupt("scanning methods");
                     }
-                    Modifiers mod = parseModifiers(tokens.begin() + i);
+                    Modifiers mod = parseModifiers(tokens.begin() + (long)i);
                     i++;
                     std::string name = tokens[i].content;
                     if (currentFatherSymbol.top() != rootNamespace) {
@@ -204,7 +209,7 @@ namespace Seserot {
                     methods.emplace(name, methodSymbol);
                 }
                 else if (tokens[i].content == "var" || tokens[i].content == "val") {
-                    auto mod = parseModifiers(tokens.begin() + i,
+                    auto mod = parseModifiers(tokens.begin() + (long)i,
                                               tokens[i].content == "var" ? Mutable : None);
                     auto& t = read(i);
                     auto* classSymbol = currentClassSymbol(currentFatherSymbol.top());
@@ -434,7 +439,7 @@ namespace Seserot {
         return 0;//todo
     }
 
-    AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter, char untilBracket = '\0') {
+    AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter, char untilBracket) {
         std::vector<std::variant<AbstractSyntaxTreeNode, std::string>> s;
         const std::map<std::string, AbstractSyntaxTreeNode::Actions> actionMap{
                 {"+", AbstractSyntaxTreeNode::Add},
@@ -501,15 +506,20 @@ namespace Seserot {
         /* Q: tokenIter何时++？
          * A: 各自独立，直到无法解析
          */
+        bool success = false;
         while (tokenIter != tokens.end()) {
             switch (tokenIter->type) {
                 case Token::NewLine:
-                    if (!untilBracket && s.back().index() == 0)
+                    if (!untilBracket && s.back().index() == 0) {
                         // 为什么这么写？
                         // 注意此时做不到太精细的分析，同时我们允许用换行分割表达式，那就只能这样了
                         // 对于if，函数之类的，由于括号会继续解析
                         tokenIter++;
-                        break;
+                        success = true;
+                    }
+                    else
+                        tokenIter++;
+                    break;
                 case Token::Operator: {
                     if (tokenIter->content == ";") {
                         if (!untilBracket) {
@@ -518,15 +528,13 @@ namespace Seserot {
                                                                                 "found a semicolon.");
                             errorTable.interrupt();
                         }
+                        success = true;
                         break;
                     }
-
-                    AbstractSyntaxTreeNode::Actions action;
-
-                    if (actionMap.contains(tokenIter->content))
-                        action = actionMap.at(tokenIter->content);
-                    else
-                        action = AbstractSyntaxTreeNode::Call;
+                    if (tokenIter->content.length() == 1 && tokenIter->content[0] == untilBracket) {
+                        success = true;
+                        break;//因为括号结束
+                    }
 
                     if (!s.empty() && s.back().index() == 0 &&
                         tokenIter->type == Token::Operator && tokenIter->content == "(") {
@@ -538,11 +546,13 @@ namespace Seserot {
                         node->typeInferred = type;
                         node->action = AbstractSyntaxTreeNode::Call;
                         node->children.push_back({});//todo: method
+                        tokenIter++;
                         return node;
                     }
                     else if (tokenIter->type == Token::Operator && tokenIter->content == "(") {
                         // brackets
-                        auto *expr = parseExpression(tokenIter);
+                        tokenIter++;
+                        auto *expr = parseExpression(tokenIter, ')');
                         if (expr == nullptr) {
                             // todo: 分配错误码
                             errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
@@ -579,18 +589,108 @@ namespace Seserot {
                     break;
                 }
                 case Token::Number: {
+                    AbstractSyntaxTreeNode::Actions action = AbstractSyntaxTreeNode::LiteralLong;
+                    bool negative = false;
+                    // negative number
+                    if (!s.empty() && s.back().index() == 1) {
+                        std::string op = std::get<std::string>(s.back());
+                        if (op == "-") {
+                            if (s.size() == 1 || // 只有一个元素，是负号
+                                (s.size() >= 2 && (s.end() - 2)->index() == 1)//前一个是符号，是负号
+                                    ) {
+                                s.pop_back();
+                                negative = true;
+                            }
+                        }
+                    }
                     // parse number
+                    std::string toParse = tokenIter->content;
+                    long power = 0;//e后面的指数
+                    size_t size;
+                    AbstractSyntaxTreeNode node;
+                    std::variant<long long, long double, unsigned long long> v;
+                    std::string suffix;
+                    if (auto index = toParse.find('e'); index != std::string::npos) {
+                        std::string str = toParse.substr(index + 1);
+                        char *end;
+                        power = strtol(str.c_str(), &end, 10);
+                        suffix = end;
+                        toParse = toParse.substr(0, index);
+                        action = AbstractSyntaxTreeNode::LiteralDouble;
+                    }
+                    // 'e' or '.' is double
+                    if (tokenIter->content.find('.') != -1 || action == AbstractSyntaxTreeNode::LiteralDouble) {
+                        // 小数
+                        action = AbstractSyntaxTreeNode::LiteralDouble;
+                        char *end;
+                        double value = strtod(tokenIter->content.c_str(), &end);
+                        if (!suffix.empty() || strlen(end) != 0) {
+                            // e.g.
+                            // 1.3ue5u
+                            //todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "double literal cannot have suffix.");
+                        }
+                        if (negative) {
+                            value = -value;
+                        }
+                        value *= pow(10, power);
+                        if (isnan(value) || isinf(value)) {
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "bad literal: NaN / Inf");
+                        }
+                        node.data = new char[8];
+                        node.dataLength = 8;
+                        memcpy(node.data, &value, 8);
+                    }
+                    else {
+                        char* end = new char[8];
+                        size = string2FitNumber(toParse, end, negative);
+                        if (size == 256) {
+                            //todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "number size overflowed.");
+                        }
+                        if (size == 0) {
+                            errorTable.errors.emplace_back(tokenIter->start, 1000,
+                                                          "parse number literal @"+ HERE);
+                        }
+                        node.dataLength = size;
+                        node.data = end;
+                    }
+
+                    node.action = action;
+
+                    //check suffix(parsed above here)
+                    for (int i = 0; i < suffix.length(); ++i) {
+                        if (suffix.find(suffix[i], i + 1) != std::string::npos) {
+                            // todo:errcode
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "repeated number modifier.");
+                            break;
+                        }
+                    }
+
+                    s.emplace_back(node);
+                    tokenIter++;
                     break;
                 }
                 case Token::Literal: {
-                    auto* p = new AbstractSyntaxTreeNode;
-                    p->action = AbstractSyntaxTreeNode::LiteralString;
-
+                    AbstractSyntaxTreeNode node;
+                    node.action = AbstractSyntaxTreeNode::LiteralString;
+                    node.dataLength = tokenIter->content.length();
+                    node.data = new char[node.dataLength];
+                    memcpy(node.data, tokenIter->content.c_str(), node.dataLength);
+                    s.emplace_back(node);
+                    tokenIter++;
                     break;
                 }
                 default:
                     break;
             }
+            if (success) break;
+        }
+
+        if (!success) {
+            // todo:分配错误码
+            errorTable.errors.emplace_back(tokenIter->start, 0, "unexpected EOF while parsing expressions.");
+            errorTable.interrupt();
         }
 
         for (int i = 0; i < priority.size(); ++i) {
@@ -631,6 +731,7 @@ namespace Seserot {
                         // it -> op+1
                         node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
                         it = s.erase(it);
+
                         // it -> op+2
                         it = s.insert(it, node);
                         it++;
@@ -640,5 +741,96 @@ namespace Seserot {
         }
 
         return nullptr;
+    }
+
+    template<class T>
+    std::optional<T> Parser::convertToNumber(const std::string& str) {
+        T t;
+        std::stringstream ss;
+        ss << str;
+
+        return std::optional<T>();
+    }
+
+    /**
+     * 将包含正数的字符串转为数字并检查溢出
+     * @param str 正数，不含非数字字符
+     * @param val 返回一个持久化保存的对象
+     * @return 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
+     */
+    size_t Parser::string2FitNumber(const std::string &str, char *ptr, bool negative) {
+        std::stringstream ss;
+        unsigned long long ll;
+        ss << str;
+        ss >> ll;
+        if (negative) {
+            ll = -ll;
+        }
+        if (!ss.eof() || (ll & 0x8000000000000000ull)) {
+            return 0;
+        }
+        if (!ss) {
+            return 256;
+        }
+        if (ll & 0xffffffff00000000ull) {
+            static_assert(sizeof(long) == 8);
+            memcpy(ptr, &ll, 8);
+            return 8;
+        }
+        else if (ll & 0xffff0000ull) {
+            static_assert(sizeof(int) == 4);
+            memcpy(ptr, &ll + 4, 4);
+            return 4;
+        }
+        else if (ll & 0xff00ull) {
+            static_assert(sizeof(short) == 2);
+            memcpy(ptr, &ll + 6, 2);
+            return 2;
+        }
+        else {
+            static_assert(sizeof(char) == 1);
+            memcpy(ptr, &ll + 7, 1);
+            return 1;
+        }
+    }
+
+    Token &Parser::expectIdentifier(size_t &pos) {
+        pos++;
+        if (pos == tokens.size()) {
+            //todo: 分配错误码
+            errorTable.errors.emplace_back(tokens.back().stop, 0, "unexpected EOF");
+            errorTable.interrupt();
+        }
+        if (tokens[pos].type != Token::Name) {
+            //todo: 分配错误码
+            errorTable.errors.emplace_back(tokens.back().stop, 0, "Expected an identifier.");
+            errorTable.interrupt();
+        }
+        return tokens[pos];
+    }
+
+    Token &Parser::expectOperator(size_t &pos) {
+        pos++;
+        if (pos == tokens.size()) {
+            //todo: 分配错误码
+            errorTable.errors.emplace_back(tokens.back().stop, 0, "unexpected EOF");
+            errorTable.interrupt();
+        }
+        if (tokens[pos].type != Token::Operator) {
+            //todo: 分配错误码
+            errorTable.errors.emplace_back(tokens.back().stop, 0, "Expected an operator.");
+            errorTable.interrupt();
+        }
+        return tokens[pos];
+    }
+
+    bool Parser::expectIdentifier(size_t &pos, const std::string& content) {
+        pos++;
+        if (pos == tokens.size()) {
+            //todo: 分配错误码
+            errorTable.errors.emplace_back(tokens.back().stop, 0, "unexpected EOF");
+            errorTable.interrupt();
+        }
+        return tokens[pos].type == Token::Operator && tokens[pos].content == content;
     }
 } // Seserot

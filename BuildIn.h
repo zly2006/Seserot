@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#ifndef SESEROT_GEN0_BUILDIN_H
-#define SESEROT_GEN0_BUILDIN_H
+#ifndef SESEROT_GEN0_BUILD_IN_H
+#define SESEROT_GEN0_BUILD_IN_H
 #include "Symbol.h"
 namespace Seserot {
 
@@ -77,4 +77,4 @@ namespace Seserot {
 
 } // Seserot
 
-#endif //SESEROT_GEN0_BUILDIN_H
+#endif //SESEROT_GEN0_BUILD_IN_H

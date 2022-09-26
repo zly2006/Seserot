@@ -20,29 +20,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 #include <fstream>
+#include <filesystem>
 
 #include "Lexer.h"
 #include "Parser.h"
 
-#include <filesystem>
-
-std::optional<int> build(std::filesystem::path path) {
+std::optional<int> build(const std::filesystem::path& path) {
     std::filesystem::directory_iterator iterator(path);
     if (!iterator->exists()) {
         return {};
     }
-    for (auto &item : iterator) {
+    for (auto &item: iterator) {
         std::filesystem::current_path();
     }
     return 0;
 }
 
 int main(int _argc, char **_argv) {
+    static_assert(sizeof(size_t) == 8);
+    static_assert(sizeof(short) == 2);
+    static_assert(sizeof(int) == 4);
+    static_assert(sizeof(long) == 8);
+    static_assert(sizeof(char) == 1);
     std::vector<std::string> args;
     for (int i = 1; i < _argc; ++i) {
         args.emplace_back(_argv[i]);
     }
-    std::cout << "Seserot gen0 "<< sizeof(long)*8<<"bit\n";
+    std::cout << "Seserot gen0 " << sizeof(long) * 8 << "bit\n";
     Seserot::ErrorTable errorTable;
     std::ifstream fin("../helloworld.se");
     std::string file;
@@ -51,22 +55,30 @@ int main(int _argc, char **_argv) {
         std::getline(fin, a);
         file += a + '\n';
     }
-    std::cout<<file;
+    std::cout << file;
     Seserot::Lexer lexer(errorTable, file);
     lexer.parse();
     Seserot::Parser parser(lexer.tokens, errorTable);
     parser.parse();
     std::cout << "namespaces\n";
-    for (auto&item: parser.namespaces) {
-        std::cout<<item.first<<"\n";
+    for (auto &item: parser.namespaces) {
+        std::cout << item.first << "\n";
     }
     std::cout << "classes\n";
-    for (auto&item: parser.classes) {
-        std::cout<<item.second->toString()<<"\n";
+    for (auto &item: parser.classes) {
+        std::cout << item.second->toString() << "\n";
     }
     std::cout << "methods\n";
-    for (auto&item: parser.methods) {
-        std::cout<<item.first<<"\n";
+    for (auto &item: parser.methods) {
+        std::cout << item.first << "\n";
+    }
+    {
+        Seserot::ErrorTable errorTable1;
+        Seserot::Lexer lexer1(errorTable, "1+2");
+        lexer1.parse();
+        Seserot::Parser parser1(lexer1.tokens, errorTable);
+        auto iter = parser1.tokens.begin();
+        parser1.parseExpression(iter);
     }
     return 0;
 }

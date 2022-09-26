@@ -24,7 +24,7 @@ namespace Seserot {
     class ErrorTable {
     public:
         std::vector<CompilerError> errors{};
-        void interrupt(std::string = "");
+        void interrupt(const std::string& = "");
     };
 }
 
