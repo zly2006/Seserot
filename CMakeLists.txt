@@ -12,5 +12,5 @@ add_executable(Seserot
         BuildIn.cpp
         AbstractSyntaxTreeNode.cpp
         ByteCodeWriter.cpp
-        Symbol.cpp)
+        Symbol.cpp src/utils/ByteOrder.h)
 

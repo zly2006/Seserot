@@ -710,8 +710,6 @@ namespace Seserot {
                             // it -> obj+1
                             it = s.insert(it, node);
                             // it -> new obj
-                            it++;
-                            // it -> new obj+1 (aka obj+1)
                         }
                     }
                     else if (it == s.begin() || it + 1 == s.end()) {//双目运算符但是ASTNode不够
@@ -731,15 +729,16 @@ namespace Seserot {
                         // it -> op+1
                         node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
                         it = s.erase(it);
-
                         // it -> op+2
                         it = s.insert(it, node);
-                        it++;
                     }
                 }
             }
         }
 
+        if (s.size() == 1 && s.front().index() == 0) {
+            return new AbstractSyntaxTreeNode(std::get<0>(s.front()));
+        }
         return nullptr;
     }
 
@@ -789,7 +788,7 @@ namespace Seserot {
         }
         else {
             static_assert(sizeof(char) == 1);
-            memcpy(ptr, &ll + 7, 1);
+            memcpy(ptr, (char*)&ll + 7, 1);
             return 1;
         }
     }
