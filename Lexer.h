@@ -32,6 +32,7 @@ namespace Seserot {
                 errorTable(errorTable),
                 fileContent(fileContent) {
             cursor = 0;
+            start = 0;
         }
         enum State {
             Ready,

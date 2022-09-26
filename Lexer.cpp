@@ -262,7 +262,7 @@ namespace Seserot {
                                 else errorTable.interrupt();
                             }
                             unsigned char c = a[0] << 4 | a[1];
-                            string.push_back(c);
+                            string.push_back((char)c);
                         }
                         else {
                             errorTable.interrupt("parse literal: HEX");
@@ -299,8 +299,33 @@ namespace Seserot {
         while (cursor != fileContent.length()) {
             state = parseNextChar();
         }
+        const std::set<State> allowedEndState = {
+             Number,
+             Ready,
+             Identifier,
+        };
+        if (state != Ready) { // 还需要做一下收尾
+            if (state == Number) {
+                tokens.push_back(Token{
+                        startPosition, position,
+                        Token::Type::Number, std::string (fileContent.substr(start, cursor - start))
+                });
+                state = Ready;
+            }
+            else if (state == Identifier) {
+                tokens.push_back(Token{
+                        startPosition, position,
+                        Token::Type::Name, std::string(fileContent.substr(start, cursor - start))
+                });
+                state = Ready;
+            }
+        }
         if (state != Ready) {
             errorTable.interrupt("End state is not ready.");
+        }
+        if (tokens.back().type != Token::NewLine) {
+            // 欺骗一下parser
+            tokens.push_back(Token{tokens.back().stop, tokens.back().stop, Token::NewLine});
         }
     }
 } // Seserot
