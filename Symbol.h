@@ -1,6 +1,20 @@
-//
-// Created by 赵李言 on 2022/8/12.
-//
+/*********************************************************************
+Seserot - My toy compiler
+Copyright (C) 2022  zly2006
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*********************************************************************/
 
 #ifndef SESEROT_GEN0_SYMBOL_H
 #define SESEROT_GEN0_SYMBOL_H
@@ -23,6 +37,7 @@ namespace Seserot {
         PrivateProtected = 512,
         PrivateInternal = 1024,
         Inner = 2048,
+        Infix = 4096,
     };
 
     bool isPrivateModifier(Modifiers);
@@ -36,7 +51,7 @@ namespace Seserot {
     struct Symbol {
         enum Type {
             Class = 1,
-            GenericClass = 2,
+            Trait = 2,
             Method = 4,
             Property = 8,
             Value = 16,
@@ -48,8 +63,7 @@ namespace Seserot {
         Symbol *father;
         Type type;
 
-        explicit Symbol(Seserot::Scope *scope, Type type, std::string name, Symbol *father)
-                : scope(scope), type(type), name(std::move(name)), father(father) {}
+        Symbol(Seserot::Scope *scope, Type type, std::string name, Symbol *father);
     };
 
     struct SymbolWithChildren : Symbol {
@@ -57,36 +71,27 @@ namespace Seserot {
                 Scope *scope,
                 Type type,
                 const std::string &name,
-                Scope *childScope)
-                : Symbol(scope, type, name, nullptr), childScope(childScope) {}
+                Scope *childScope);
 
         Scope *childScope;
-
-        void fun() {
-            name = "";
-
-        }
     };
 
     struct NamespaceSymbol : SymbolWithChildren {
         NamespaceSymbol(
                 Scope *scope,
-                const std::string &name)
-                : SymbolWithChildren(scope, Namespace, name, nullptr) {}
+                const std::string &name);
     };
+
+    struct TraitSymbol;
 
     struct ClassSymbol : SymbolWithChildren {
         ClassSymbol(
                 Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                Modifiers modifiers)
-                : SymbolWithChildren(scope, Class, name, nullptr),
-                  genericArgs(std::move(genericArgs)), closureFather(closureFather), modifiers(modifiers) {}
+                Modifiers modifiers);
 
         ClassSymbol(
                 Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                int modifiers)
-                : SymbolWithChildren(scope, Class, name, nullptr),
-                  genericArgs(std::move(genericArgs)), closureFather(closureFather), modifiers((Modifiers) modifiers) {}
+                int modifiers);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;
@@ -94,24 +99,25 @@ namespace Seserot {
          * 弃用
          */
         ClassSymbol *closureFather;
+        std::vector<TraitSymbol*> traits;
+        size_t size = 0;
 
-        [[nodiscard]] std::string toString() const {
-            std::string ret;
-            if (modifiers & Modifiers::Static) ret += "static ";
-            if (modifiers & Modifiers::Final) ret += "final ";
-            if (closureFather != nullptr) ret += closureFather->name + "::";
-            ret += name;
-            return ret;
-        }
+        bool operator==(ClassSymbol* another);
+
+        [[nodiscard]] std::string toString() const;
+    };
+
+    struct TraitSymbol : SymbolWithChildren {
+        TraitSymbol(Scope *scope, const std::string &name, Modifiers modifiers);
+
+        Modifiers modifiers;
+        std::vector<ClassSymbol> genericArgs;
     };
 
     struct MethodSymbol : SymbolWithChildren {
         MethodSymbol(
                 Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                std::vector<ClassSymbol *> args, ClassSymbol *returnType)
-                : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),
-                  genericArgs(std::move(genericArgs)),
-                  args(std::move(args)), stackSize(0), returnType(returnType) {}
+                std::vector<ClassSymbol *> args, ClassSymbol *returnType);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
@@ -121,8 +127,7 @@ namespace Seserot {
     };
 
     struct VariableSymbol : Symbol {
-        VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers)
-                : Symbol(scope, Variable, name, father), modifiers(modifiers) {}
+        VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers);
         ClassSymbol* returnType = nullptr;
         Modifiers modifiers;
     };
@@ -130,7 +135,7 @@ namespace Seserot {
     struct PropertySymbol : Symbol {
         PropertySymbol(
                 Scope *scope, const std::string &name, Symbol *father,
-                Modifiers modifiers) : Symbol(scope, Property, name, father), modifiers(modifiers) {}
+                Modifiers modifiers);
         Modifiers modifiers;
         ClassSymbol* returnType = nullptr;
         MethodSymbol* getter = nullptr;

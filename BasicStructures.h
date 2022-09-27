@@ -1,13 +1,33 @@
-//
-// Created by 赵李言 on 2022/8/9.
-//
+/*********************************************************************
+Seserot - My toy compiler
+Copyright (C) 2022  zly2006
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*********************************************************************/
 
 #ifndef SESEROT_GEN0_BASIC_STRUCTURES_H
 #define SESEROT_GEN0_BASIC_STRUCTURES_H
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
 
+#include "src/utils/sum_string.h"
+
+#define HERE sum("At file ", __FILE__, " line ", __LINE__, __func__)
+
+int main(int, char**);
 namespace Seserot {
     struct SourcePosition {
         std::string file;
@@ -49,18 +69,19 @@ namespace Seserot {
     };
 
     struct Scope {
-        Scope(Scope *father, SourcePosition start, SourcePosition stop) : father(father), start(start), stop(stop) {}
+        Scope(Scope *father, SourcePosition start, SourcePosition stop) : father(father), start(std::move(start)), stop(std::move(stop)) {}
 
-        bool inside(Scope* father) {
+        bool inside(Scope* scope) {
+            assert(scope != nullptr);
             Scope* cur = this;
-            while (cur->father != nullptr && cur->father != father) cur = cur->father;
-            return cur->father == father;
+            while (cur->father != nullptr && cur->father != scope) cur = cur->father;
+            return cur->father == scope;
         }
 
-        Scope& newChildren(SourcePosition start, SourcePosition stop) {
-            auto* p = new Scope(this, start, stop);
+        Scope* newChildren(SourcePosition _start, SourcePosition _stop) {
+            auto* p = new Scope(this, std::move(_start), std::move(_stop));
             children.push_back(p);
-            return *p;
+            return p;
         }
 
         Scope *father = nullptr;

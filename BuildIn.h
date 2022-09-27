@@ -1,9 +1,23 @@
-//
-// Created by 赵李言 on 2022/8/12.
-//
+/*********************************************************************
+Seserot - My toy compiler
+Copyright (C) 2022  zly2006
 
-#ifndef SESEROT_GEN0_BUILDIN_H
-#define SESEROT_GEN0_BUILDIN_H
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*********************************************************************/
+
+#ifndef SESEROT_GEN0_BUILD_IN_H
+#define SESEROT_GEN0_BUILD_IN_H
 #include "Symbol.h"
 namespace Seserot {
 
@@ -34,17 +48,33 @@ namespace Seserot {
                 "Double",
                 {},
                 nullptr, Static | ValueType);
+        ClassSymbol *const stringClass = new ClassSymbol(
+                nullptr,
+                "String",
+                {},
+                nullptr, Static);
+        ClassSymbol *const classClass = new ClassSymbol(
+                nullptr,
+                "Class",
+                {},
+                nullptr, Static);
         ClassSymbol *const functionClass = new ClassSymbol(
                 nullptr,
                 "Function",
                 {
-                    ClassSymbol(nullptr, "P", {}, nullptr, None),
-                    ClassSymbol(nullptr, "T", {}, nullptr, None),
-                    ClassSymbol(nullptr, "...", {}, nullptr, None),
-                    },
+                        ClassSymbol(nullptr, "P", {}, nullptr, None),
+                        ClassSymbol(nullptr, "T", {}, nullptr, None),
+                        ClassSymbol(nullptr, "...", {}, nullptr, None),
+                },
                 nullptr, Static | ValueType);
+
+        TraitSymbol *const numberTrait = new TraitSymbol(
+                nullptr,
+                "Number",
+                (Modifiers) (Static | ValueType)
+        );
     };
 
 } // Seserot
 
-#endif //SESEROT_GEN0_BUILDIN_H
+#endif //SESEROT_GEN0_BUILD_IN_H
