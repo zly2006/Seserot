@@ -64,18 +64,18 @@ namespace Seserot {
     }
 
     void Parser::scan() {
-        Scope* currentScope = &root;
-        SymbolWithChildren* rootNamespace = new NamespaceSymbol(currentScope, "<root>");
-        namespaces.emplace("",(NamespaceSymbol*)rootNamespace);
-        std::stack<SymbolWithChildren*>currentFatherSymbol;
+        Scope *currentScope = &root;
+        SymbolWithChildren *rootNamespace = new NamespaceSymbol(currentScope, "<root>");
+        namespaces.emplace("", (NamespaceSymbol *) rootNamespace);
+        std::stack<SymbolWithChildren *> currentFatherSymbol;
         currentFatherSymbol.emplace(rootNamespace);
         // init finish
 
-        auto newScope = [&](Token& thisToken) {
-            currentScope = currentScope->newChildren(thisToken.start,SourcePosition(0,0));
+        auto newScope = [&](Token &thisToken) {
+            currentScope = currentScope->newChildren(thisToken.start, SourcePosition(0, 0));
         };
         // 作用：结束当前scope，检查symbol scope并整理currentFatherSymbol
-        auto endScope = [&](Token& thisToken) {
+        auto endScope = [&](Token &thisToken) {
             if (currentScope == nullptr) {
                 errorTable.errors.emplace_back(thisToken.start, 0, "unexpected \'}\'");//todo
                 errorTable.interrupt();
@@ -95,7 +95,8 @@ namespace Seserot {
                 // 处理scope
                 if (tokens[i].content == "{") {
                     newScope(tokens[i]);
-                } else if (tokens[i].content == "}") {
+                }
+                else if (tokens[i].content == "}") {
                     endScope(tokens[i]);
                 }
             }
@@ -126,7 +127,7 @@ namespace Seserot {
                         errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
                         errorTable.interrupt("scanning classes");
                     }
-                    auto mod = parseModifiers(tokens.begin() + (long)i);
+                    auto mod = parseModifiers(tokens.begin() + (long) i);
                     if (!(mod & Inner)) {
                         mod = static_cast<Modifiers>(mod | Static);
                     }
@@ -158,7 +159,7 @@ namespace Seserot {
                         errorTable.errors.emplace_back(tokens[i].stop, 2013, "method name not found.");
                         errorTable.interrupt("scanning methods");
                     }
-                    Modifiers mod = parseModifiers(tokens.begin() + (long)i);
+                    Modifiers mod = parseModifiers(tokens.begin() + (long) i);
                     i++;
                     std::string name = tokens[i].content;
                     if (currentFatherSymbol.top() != rootNamespace) {
@@ -211,11 +212,11 @@ namespace Seserot {
                     methods.emplace(name, methodSymbol);
                 }
                 else if (tokens[i].content == "var" || tokens[i].content == "val") {
-                    auto mod = parseModifiers(tokens.begin() + (long)i,
+                    auto mod = parseModifiers(tokens.begin() + (long) i,
                                               tokens[i].content == "var" ? Mutable : None);
-                    auto& t = read(i);
-                    auto* classSymbol = currentClassSymbol(currentFatherSymbol.top());
-                    auto* methodSymbol = currentMethodSymbol(currentFatherSymbol.top());
+                    auto &t = read(i);
+                    auto *classSymbol = currentClassSymbol(currentFatherSymbol.top());
+                    auto *methodSymbol = currentMethodSymbol(currentFatherSymbol.top());
                     if (tokens[i].content == "val") {
                         if (mod & Mutable) {
                             //todo: 分配错误码
@@ -276,7 +277,8 @@ namespace Seserot {
                     errorTable.errors.emplace_back(first->start, 2505, "repeating modifier.");
                 }
                 ret.insert(first->content);
-            } else if (first->type != Token::NewLine) {
+            }
+            else if (first->type != Token::NewLine) {
                 // other
                 break;
             }
@@ -288,7 +290,7 @@ namespace Seserot {
         unsigned int m = def;
         bool accessibilityParsed = false;
         bool mutableParsed = false;
-        for (auto& mo : ret) {
+        for (auto &mo: ret) {
             if (mo == "public" || mo == "private" || mo == "internal" || mo == "protected") {
                 if (accessibilityParsed) {
                     errorTable.errors.emplace_back(it->start, 2505, "conflict accessibility modifier.");
@@ -346,7 +348,7 @@ namespace Seserot {
         if ((m & Final) && (m & Static)) {
             errorTable.errors.emplace_back(it->start, 2505, "static member cannot be final.");
         }
-        return (Modifiers)m;
+        return (Modifiers) m;
     }
 
     /**
@@ -354,15 +356,14 @@ namespace Seserot {
      * @param i 当前在第几个token
      * @return 下一个token
      */
-    Token &Parser::read(size_t& i) {
+    Token &Parser::read(size_t &i) {
         do {
             i++;
             if (i == tokens.size()) {
                 errorTable.errors.emplace_back(tokens[i - 1].stop, 2014, "unexpected EOF");
                 errorTable.interrupt("reading tokens");
             }
-        }
-        while (tokens[i].type == Token::NewLine);
+        } while (tokens[i].type == Token::NewLine);
         return tokens[i];
     }
 
@@ -371,11 +372,11 @@ namespace Seserot {
      * @param symbol 当前symbol，根据这个向上寻找
      * @return symbol为null或没有找到，返回nullptr；否则是ClassSymbol的指针
      */
-    ClassSymbol *Parser::currentClassSymbol(Symbol* symbol) {
+    ClassSymbol *Parser::currentClassSymbol(Symbol *symbol) {
         while (symbol != nullptr && symbol->type != Symbol::Class) {
             symbol = symbol->father;
         }
-        return (ClassSymbol *)symbol;
+        return (ClassSymbol *) symbol;
     }
 
     /**@todo
@@ -407,10 +408,10 @@ namespace Seserot {
         while (symbol != nullptr && symbol->type != Symbol::Method) {
             symbol = symbol->father;
         }
-        return (MethodSymbol *)symbol;
+        return (MethodSymbol *) symbol;
     }
 
-    std::vector<Symbol *> Parser::searchSymbol(typename Symbol::Type type, const std::string& name, Scope* scope) {
+    std::vector<Symbol *> Parser::searchSymbol(typename Symbol::Type type, const std::string &name, Scope *scope) {
         assert(scope != nullptr);
         assert(!name.empty());
         std::vector<Symbol *> ret;
@@ -431,7 +432,7 @@ namespace Seserot {
         return ret;
     }
 
-    size_t Parser::generateStack(MethodSymbol*methodSymbol) {
+    size_t Parser::generateStack(MethodSymbol *methodSymbol) {
         if (!methodSymbol->genericArgs.empty()) {
             return 0;
         }
@@ -441,49 +442,49 @@ namespace Seserot {
         return 0;//todo
     }
 
-    AbstractSyntaxTreeNode* Parser::parseExpression(token_iter& tokenIter, char untilBracket) {
+    AbstractSyntaxTreeNode *Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
         std::vector<std::variant<AbstractSyntaxTreeNode, std::string>> s;
         const std::map<std::string, AbstractSyntaxTreeNode::Actions> actionMap{
-                {"+", AbstractSyntaxTreeNode::Add},
-                {"-", AbstractSyntaxTreeNode::Subtract},
-                {"*", AbstractSyntaxTreeNode::Multiple},
-                {"/", AbstractSyntaxTreeNode::Divide},
-                {"%", AbstractSyntaxTreeNode::Mod},
-                {"&&",AbstractSyntaxTreeNode::LogicAnd},
-                {"||",AbstractSyntaxTreeNode::LogicOr},
-                {"!",AbstractSyntaxTreeNode::LogicNot},
-                {"&",AbstractSyntaxTreeNode::BitAnd},
-                {"|",AbstractSyntaxTreeNode::BitOr},
-                {"~",AbstractSyntaxTreeNode::BitNot},
-                {"<<",AbstractSyntaxTreeNode::LeftShift},
-                {">>",AbstractSyntaxTreeNode::RightShift},
-                {"^",AbstractSyntaxTreeNode::BitXor}
+                {"+",  AbstractSyntaxTreeNode::Add},
+                {"-",  AbstractSyntaxTreeNode::Subtract},
+                {"*",  AbstractSyntaxTreeNode::Multiple},
+                {"/",  AbstractSyntaxTreeNode::Divide},
+                {"%",  AbstractSyntaxTreeNode::Mod},
+                {"&&", AbstractSyntaxTreeNode::LogicAnd},
+                {"||", AbstractSyntaxTreeNode::LogicOr},
+                {"!",  AbstractSyntaxTreeNode::LogicNot},
+                {"&",  AbstractSyntaxTreeNode::BitAnd},
+                {"|",  AbstractSyntaxTreeNode::BitOr},
+                {"~",  AbstractSyntaxTreeNode::BitNot},
+                {"<<", AbstractSyntaxTreeNode::LeftShift},
+                {">>", AbstractSyntaxTreeNode::RightShift},
+                {"^",  AbstractSyntaxTreeNode::BitXor}
         };
-        const std::vector<std::set<AbstractSyntaxTreeNode::Actions>> priority {
+        const std::vector<std::set<AbstractSyntaxTreeNode::Actions>> priority{
                 {
-                    AbstractSyntaxTreeNode::Multiple,
-                    AbstractSyntaxTreeNode::Divide,
-                    AbstractSyntaxTreeNode::Mod,
-                 },
-                {
-                    AbstractSyntaxTreeNode::Add,
-                    AbstractSyntaxTreeNode::Subtract,
+                        AbstractSyntaxTreeNode::Multiple,
+                        AbstractSyntaxTreeNode::Divide,
+                        AbstractSyntaxTreeNode::Mod,
                 },
                 {
-                    AbstractSyntaxTreeNode::BitAnd,
-                    AbstractSyntaxTreeNode::BitOr,
-                    AbstractSyntaxTreeNode::BitNot,
-                    AbstractSyntaxTreeNode::BitXor,
-                    AbstractSyntaxTreeNode::RightShift,
-                    AbstractSyntaxTreeNode::LeftShift,
+                        AbstractSyntaxTreeNode::Add,
+                        AbstractSyntaxTreeNode::Subtract,
                 },
                 {
-                    AbstractSyntaxTreeNode::LogicNot,
-                    AbstractSyntaxTreeNode::LogicAnd,
-                    AbstractSyntaxTreeNode::LogicOr,
+                        AbstractSyntaxTreeNode::BitAnd,
+                        AbstractSyntaxTreeNode::BitOr,
+                        AbstractSyntaxTreeNode::BitNot,
+                        AbstractSyntaxTreeNode::BitXor,
+                        AbstractSyntaxTreeNode::RightShift,
+                        AbstractSyntaxTreeNode::LeftShift,
                 },
                 {
-                    //赋值
+                        AbstractSyntaxTreeNode::LogicNot,
+                        AbstractSyntaxTreeNode::LogicAnd,
+                        AbstractSyntaxTreeNode::LogicOr,
+                },
+                {
+                        //赋值
                 }
         };
         const std::set<AbstractSyntaxTreeNode::Actions> unary = {
@@ -582,7 +583,7 @@ namespace Seserot {
                     if (reference.contains(tokenIter.base())) {
                         auto symbol = reference[tokenIter.base()];
                         if (symbol->type == Symbol::Method) {
-                            auto function = (MethodSymbol*)symbol;
+                            auto function = (MethodSymbol *) symbol;
                             if (function->modifiers & Infix) {
                                 // infix call
                             }
@@ -644,18 +645,31 @@ namespace Seserot {
                         memcpy(node.data, &value, 8);
                     }
                     else {
-                        char* end = new char[8];
-                        size = string2FitNumber(toParse, end, negative);
+                        char *ptr = new char[8];
+                        size = string2FitNumber(toParse, ptr, negative);
                         if (size == 256) {
                             //todo: 分配错误码
                             errorTable.errors.emplace_back(tokenIter->start, 0, "number size overflowed.");
                         }
                         if (size == 0) {
                             errorTable.errors.emplace_back(tokenIter->start, 1000,
-                                                          "parse number literal @"+ HERE);
+                                                           "parse number literal @" + HERE);
+                        }
+                        switch (size) {
+                            case 1:
+                                node.action = AbstractSyntaxTreeNode::LiteralByte;
+                                break;
+                            case 2:
+                                node.action = AbstractSyntaxTreeNode::LiteralShort;
+                                break;
+                            case 4:
+                                node.action = AbstractSyntaxTreeNode::LiteralInt;
+                                break;
+                            default:
+                                break;
                         }
                         node.dataLength = size;
-                        node.data = end;
+                        node.data = ptr;
                     }
 
                     node.action = action;
@@ -745,7 +759,7 @@ namespace Seserot {
     }
 
     template<class T>
-    std::optional<T> Parser::convertToNumber(const std::string& str) {
+    std::optional<T> Parser::convertToNumber(const std::string &str) {
         T t;
         std::stringstream ss;
         ss << str;
@@ -755,6 +769,7 @@ namespace Seserot {
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "Simplify"
+
     /**
      * 将包含正数的字符串转为数字并检查溢出
      * @param str 正数，不含非数字字符
@@ -767,30 +782,36 @@ namespace Seserot {
         unsigned long long ll;
         ss << str;
         ss >> ll;
-        if (negative) {
-            ll = -ll;
-        }
+        auto processNegative = [&]() {
+            if (negative) ll = -ll;
+        };
         if (!ss.eof() || (ll & 0x8000000000000000ull)) {
             return 0;
         }
         if (!ss) {
             return 256;
         }
-        if (ll & 0xffffffff00000000ull) {
-            static_assert(sizeof(long) == 8);
-            memcpy(ptr, &ll, 8);
+        if (ll & 0xffffffff00000000ull ||
+            (negative && (ll & 80000000ull))) {
+            processNegative();
+            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
+                std::reverse_copy(&ll, &ll + 8, ptr);
+            else
+                memcpy(ptr, &ll, 8);
             return 8;
         }
-        else if (ll & 0xffff0000ull) {
-            static_assert(sizeof(int) == 4);
+        else if (ll & 0xffff0000ull ||
+                 (negative && (ll & 8000ull))) {
+            processNegative();
             if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
                 std::reverse_copy(&ll + 4, &ll + 8, ptr);
             else
                 memcpy(ptr, &ll, 4);
             return 4;
         }
-        else if (ll & 0xff00ull) {
-            static_assert(sizeof(short) == 2);
+        else if (ll & 0xff00ull ||
+                 (negative && (ll & 80ull))) {
+            processNegative();
             if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
                 std::reverse_copy(&ll + 6, &ll + 8, ptr);
             else
@@ -798,7 +819,7 @@ namespace Seserot {
             return 2;
         }
         else {
-            static_assert(sizeof(char) == 1);
+            processNegative();
             if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
                 std::reverse_copy(&ll + 7, &ll + 8, ptr);
             else
@@ -806,6 +827,7 @@ namespace Seserot {
             return 1;
         }
     }
+
 #pragma clang diagnostic pop
 
     Token &Parser::expectIdentifier(size_t &pos) {
@@ -838,7 +860,7 @@ namespace Seserot {
         return tokens[pos];
     }
 
-    bool Parser::expectIdentifier(size_t &pos, const std::string& content) {
+    bool Parser::expectIdentifier(size_t &pos, const std::string &content) {
         pos++;
         if (pos == tokens.size()) {
             //todo: 分配错误码

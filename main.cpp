@@ -78,7 +78,7 @@ int main(int _argc, char **_argv) {
     }
     {
         Seserot::ErrorTable errorTable1;
-        Seserot::Lexer lexer1(errorTable, "1+2");
+        Seserot::Lexer lexer1(errorTable, "1+-2");
         lexer1.parse();
         Seserot::Parser parser1(lexer1.tokens, errorTable);
         auto iter = parser1.tokens.begin();
