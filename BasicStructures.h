@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "src/utils/sum_string.h"
 
-#define HERE sum("At file ", __FILE_NAME__, " line ", __LINE__, __func__)
+#define HERE sum("At file ", __FILE__, " line ", __LINE__, __func__)
 
 int main(int, char**);
 namespace Seserot {

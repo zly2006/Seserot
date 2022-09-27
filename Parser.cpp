@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Parser.h"
 #include "Symbol.h"
 #include "src/utils/sum_string.h"
+#include "src/utils/ByteOrder.h"
 
 #include <utility>
 #include <stack>
@@ -26,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <sstream>
 #include <any>
+#include <cmath>
 
 namespace Seserot {
     void Parser::reset() {
@@ -751,10 +753,13 @@ namespace Seserot {
         return std::optional<T>();
     }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "Simplify"
     /**
      * 将包含正数的字符串转为数字并检查溢出
      * @param str 正数，不含非数字字符
-     * @param val 返回一个持久化保存的对象
+     * @param ptr 返回一个持久化保存的对象，类型是char数组，可以delete，保证是小端序
+     * @param negative 表示这个数字是不是false
      * @return 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
      */
     size_t Parser::string2FitNumber(const std::string &str, char *ptr, bool negative) {
@@ -778,20 +783,30 @@ namespace Seserot {
         }
         else if (ll & 0xffff0000ull) {
             static_assert(sizeof(int) == 4);
-            memcpy(ptr, &ll + 4, 4);
+            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
+                std::reverse_copy(&ll + 4, &ll + 8, ptr);
+            else
+                memcpy(ptr, &ll, 4);
             return 4;
         }
         else if (ll & 0xff00ull) {
             static_assert(sizeof(short) == 2);
-            memcpy(ptr, &ll + 6, 2);
+            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
+                std::reverse_copy(&ll + 6, &ll + 8, ptr);
+            else
+                memcpy(ptr, &ll, 2);
             return 2;
         }
         else {
             static_assert(sizeof(char) == 1);
-            memcpy(ptr, (char*)&ll + 7, 1);
+            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
+                std::reverse_copy(&ll + 7, &ll + 8, ptr);
+            else
+                memcpy(ptr, &ll, 1);
             return 1;
         }
     }
+#pragma clang diagnostic pop
 
     Token &Parser::expectIdentifier(size_t &pos) {
         pos++;
