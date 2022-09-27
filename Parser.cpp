@@ -636,7 +636,7 @@ namespace Seserot {
                             value = -value;
                         }
                         value *= pow(10, power);
-                        if (isnan(value) || isinf(value)) {
+                        if (std::isnan(value) || std::isinf(value)) {
                             errorTable.errors.emplace_back(tokenIter->start, 0, "bad literal: NaN / Inf");
                         }
                         node.data = new char[8];
