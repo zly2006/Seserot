@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Parser.h"
 #include "Symbol.h"
-#include "src/utils/sum_string.h"
-#include "src/utils/ByteOrder.h"
+#include "utils/sum_string.h"
+#include "utils/ByteOrder.h"
 
 #include <utility>
 #include <stack>
@@ -580,8 +580,8 @@ namespace Seserot {
                 }
                 case Token::Name: {
                     //infix function
-                    if (reference.contains(tokenIter.base())) {
-                        auto symbol = reference[tokenIter.base()];
+                    if (reference.contains(&*tokenIter)) {
+                        auto symbol = reference[&*tokenIter];
                         if (symbol->type == Symbol::Method) {
                             auto function = (MethodSymbol *) symbol;
                             if (function->modifiers & Infix) {

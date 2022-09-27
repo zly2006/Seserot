@@ -323,7 +323,7 @@ namespace Seserot {
         if (state != Ready) {
             errorTable.interrupt("End state is not ready.");
         }
-        if (tokens.back().type != Token::NewLine) {
+        if (tokens.empty() || tokens.back().type != Token::NewLine) {
             // 欺骗一下parser
             tokens.push_back(Token{tokens.back().stop, tokens.back().stop, Token::NewLine});
         }

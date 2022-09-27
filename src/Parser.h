@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unordered_map>
 #include <set>
 #include <any>
+#include <optional>
 #include "AbstractSyntaxTreeNode.h"
 
 namespace Seserot {

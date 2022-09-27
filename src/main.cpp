@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Lexer.h"
 #include "Parser.h"
-#include "src/utils/ByteOrder.h"
+#include "utils/ByteOrder.h"
 
 std::optional<int> build(const std::filesystem::path& path) {
     std::filesystem::directory_iterator iterator(path);

@@ -22,8 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <utility>
 #include <vector>
 #include <cassert>
+#include <optional>
+#include <cmath>
+#include <algorithm>
+#include <variant>
 
-#include "src/utils/sum_string.h"
+#include "utils/sum_string.h"
 
 #define HERE sum("At file ", __FILE__, " line ", __LINE__, __func__)
 
