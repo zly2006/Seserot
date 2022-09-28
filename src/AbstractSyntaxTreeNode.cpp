@@ -27,7 +27,7 @@ namespace Seserot {
         memcpy(buffer, &action, 4);//len = 4
         memcpy(buffer + 4, &dataLength, 8);
         memcpy(buffer + 12, data, dataLength);
-        unsigned int tmp = children.size();
+        uint64 tmp = children.size();
         memcpy(buffer + 12 + dataLength, &tmp, 8);//len = 12
         size_t len = 20 + dataLength + children.size() * 8;
         for (int i = 0; i < children.size(); ++i) {
@@ -42,18 +42,22 @@ namespace Seserot {
         assert(buffer != nullptr);
         children.clear();
         memcpy(&action, buffer, 4);
-        size_t num;
+        uint64 num;
         memcpy(&num, buffer + 4, 8);
-        size_t offset = 12 + num * 8;
+        dataLength = num;
+        data = new char[num];
+        memcpy(data, buffer + 12, dataLength);
+        memcpy(&num, buffer + 12 + dataLength, 8);
+        uint64 offset = 20 + dataLength + num * 8;
         for (int i = 0; i < num; ++i) {
-            size_t len;
-            memcpy(&len, buffer + 12 + i * 8, 8);
+            uint64 childLen;
+            memcpy(&childLen, buffer + 12 + i * 8, 8);
             children.emplace_back();
-            children.back().read(buffer + offset, len);
-            offset += len;
+            children.back().read(buffer + offset, childLen);
+            offset += childLen;
         }
         if (offset != len) {
-            //todo
+            //todo: 运行时报错
         }
     }
 

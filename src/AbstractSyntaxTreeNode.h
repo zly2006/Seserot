@@ -31,9 +31,13 @@ namespace Seserot {
     class AbstractSyntaxTreeNode {
     public:
         AbstractSyntaxTreeNode();
+
         AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode& node);
+
         AbstractSyntaxTreeNode(AbstractSyntaxTreeNode&& node) noexcept;
+
         AbstractSyntaxTreeNode &operator=(const AbstractSyntaxTreeNode &rhs);
+
         enum Actions {
             Add,
             Subtract,
@@ -75,12 +79,16 @@ namespace Seserot {
         Tags tag = Tags::None;
         Actions action = Error;
         std::vector<AbstractSyntaxTreeNode> children = {};
+
         size_t write(char*);
+
         void read(char*, size_t);
+
         // char*是用来保证new/delete的，所以new的时候必须用char
         char* data = nullptr;
         size_t dataLength = 0;
         ClassSymbol* typeInferred = nullptr;
+
         ~AbstractSyntaxTreeNode();
     };
 
