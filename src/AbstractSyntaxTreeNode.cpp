@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "AbstractSyntaxTreeNode.h"
-#include <cassert>
+#include "Parser.h"
 
 namespace Seserot {
     size_t AbstractSyntaxTreeNode::write(char *buffer) {
@@ -96,6 +96,10 @@ namespace Seserot {
         typeInferred = node.typeInferred;
         memcpy(data, node.data, node.dataLength);
         return *this;
+    }
+
+    llvm::Value *AbstractSyntaxTreeNode::CodeGen(Parser &parser) {
+        return nullptr;
     }
 
     AbstractSyntaxTreeNode::AbstractSyntaxTreeNode() = default;

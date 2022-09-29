@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot {
     Lexer::State Lexer::parseNextChar() {
-        if (cursor> fileContent.length()) {
+        if (cursor > fileContent.length()) {
             errorTable.interrupt("Cursor is after the end.");
             return FatalError;
         }
@@ -32,8 +32,8 @@ namespace Seserot {
             }
             else if (fileContent[cursor] == '\"') {
                 tokens.push_back(Token{
-                    startPosition, position,
-                    Token::Literal, parseLiteral(fileContent.substr(start, cursor - start))
+                        startPosition, position,
+                        Token::Literal, parseLiteral(fileContent.substr(start, cursor - start))
                 });
                 moveCursor();
                 return Ready;
@@ -41,23 +41,20 @@ namespace Seserot {
             else if (fileContent[cursor] == '\n') {
                 errorTable.interrupt("Unexpected new line in string.");
                 return FatalError;
-            } else {
+            }
+            else {
                 moveCursor();
                 return String;
             }
         }
         else if (state == MultiLineString) {
-            /*todo:
-             * 1. 多行字符串的识别和终止存在问题
-             * 2. 转义字符问题
-             */
             if (fileContent.length() > cursor + 2
                 && fileContent[cursor + 0] == '\"'
                 && fileContent[cursor + 1] == '\"'
                 && fileContent[cursor + 2] == '\"') {
                 tokens.push_back(Token{
                         startPosition, position,
-                        Token::Literal, parseLiteral(fileContent.substr(start, cursor - start))
+                        Token::Literal, std::string(fileContent.substr(start, cursor - start))
                 });
                 moveCursor(3);
                 return Ready;
@@ -82,7 +79,8 @@ namespace Seserot {
                 && fileContent[cursor + 1] == '/') {
                 moveCursor(2);
                 return Ready;
-            } else {
+            }
+            else {
                 moveCursor();
                 return MultiLineComment;
             }
@@ -91,9 +89,10 @@ namespace Seserot {
             if (isdigit(fileContent[cursor])) {
                 moveCursor();
                 return Number;
-            } else if (numberComponents.count(fileContent[cursor])
-                && fileContent.length() > cursor + 1
-                && isdigit(fileContent[cursor + 1])) {
+            }
+            else if (numberComponents.count(fileContent[cursor])
+                     && fileContent.length() > cursor + 1
+                     && isdigit(fileContent[cursor + 1])) {
                 /* strict
                  * allowed:
                  * 1.0
@@ -107,8 +106,8 @@ namespace Seserot {
             }
             else {
                 tokens.push_back(Token{
-                    startPosition, position,
-                    Token::Type::Number, std::string (fileContent.substr(start, cursor - start))
+                        startPosition, position,
+                        Token::Type::Number, std::string(fileContent.substr(start, cursor - start))
                 });
                 return Ready;
             }
@@ -132,26 +131,28 @@ namespace Seserot {
             if (fileContent[cursor] == '`') {
                 tokens.push_back(Token{
                         startPosition, position,
-                        Token::Type::Name, std::string (fileContent.substr(start, cursor - start))
+                        Token::Type::Name, std::string(fileContent.substr(start, cursor - start))
                 });
                 moveCursor();
                 return Ready;
-            } else {
+            }
+            else {
                 moveCursor();
                 return WideIdentifier;
             }
         }
         else if (state == Ready) {
             if (fileContent[cursor] == '\t'
-                   || fileContent[cursor] == ' ') {
+                || fileContent[cursor] == ' ') {
                 moveCursor();
                 return Ready;
-            } else if (fileContent[cursor] == '\n') {
+            }
+            else if (fileContent[cursor] == '\n') {
                 syncStart();
                 moveCursor();
                 tokens.push_back(Token{
-                    startPosition,position,
-                    Token::NewLine
+                        startPosition, position,
+                        Token::NewLine
                 });
                 return Ready;
             }
@@ -162,7 +163,8 @@ namespace Seserot {
                     moveCursor(3);
                     syncStart();
                     return MultiLineString;
-                } else {
+                }
+                else {
                     moveCursor();
                     syncStart();
                     return String;
@@ -172,7 +174,8 @@ namespace Seserot {
                 if (fileContent[cursor + 1] == '/') {
                     moveCursor(2);
                     return Comment;
-                } else if (fileContent[cursor + 1] == '*') {
+                }
+                else if (fileContent[cursor + 1] == '*') {
                     moveCursor(2);
                     return MultiLineComment;
                 }
@@ -193,14 +196,14 @@ namespace Seserot {
                 return WideIdentifier;
             }
             else {
-                for (const auto& op: operators) {
+                for (const auto &op: operators) {
                     if (fileContent.length() >= op.length() + cursor) {
                         if (fileContent.substr(cursor, op.length()) == op) {
                             syncStart();
                             moveCursor(op.length());
                             tokens.push_back(Token{
-                                startPosition, position,
-                                Token::Operator, std::string(fileContent.substr(start, cursor - start))
+                                    startPosition, position,
+                                    Token::Operator, std::string(fileContent.substr(start, cursor - start))
                             });
                             return Ready;
                         }
@@ -262,7 +265,7 @@ namespace Seserot {
                                 else errorTable.interrupt();
                             }
                             unsigned char c = a[0] << 4 | a[1];
-                            string.push_back((char)c);
+                            string.push_back((char) c);
                         }
                         else {
                             errorTable.interrupt("parse literal: HEX");
@@ -290,7 +293,8 @@ namespace Seserot {
             if (fileContent[cursor] == '\n') {
                 position.line++;
                 position.column = 0;
-            } else position.column++;
+            }
+            else position.column++;
             cursor++;
         }
     }
@@ -300,15 +304,15 @@ namespace Seserot {
             state = parseNextChar();
         }
         const std::set<State> allowedEndState = {
-             Number,
-             Ready,
-             Identifier,
+                Number,
+                Ready,
+                Identifier,
         };
         if (state != Ready) { // 还需要做一下收尾
             if (state == Number) {
                 tokens.push_back(Token{
                         startPosition, position,
-                        Token::Type::Number, std::string (fileContent.substr(start, cursor - start))
+                        Token::Type::Number, std::string(fileContent.substr(start, cursor - start))
                 });
                 state = Ready;
             }
@@ -324,7 +328,7 @@ namespace Seserot {
             errorTable.interrupt("End state is not ready.");
         }
         if (tokens.empty() || tokens.back().type != Token::NewLine) {
-            // 欺骗一下parser
+            // 欺骗一下parser, 因为表达式都是以NewLine结尾的
             tokens.push_back(Token{tokens.back().stop, tokens.back().stop, Token::NewLine});
         }
     }

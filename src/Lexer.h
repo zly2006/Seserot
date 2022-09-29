@@ -18,22 +18,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_LEXER_H
 #define SESEROT_GEN0_LEXER_H
+
 #include <string>
 #include <set>
 #include "BasicStructures.h"
 #include "ErrorTable.h"
+
 namespace Seserot {
 
     class Lexer {
     public:
 
         std::vector<Token> tokens;
+
         Lexer(ErrorTable &errorTable, std::string_view fileContent) :
                 errorTable(errorTable),
                 fileContent(fileContent) {
             cursor = 0;
             start = 0;
         }
+
         enum State {
             Ready,
             String,
@@ -51,10 +55,12 @@ namespace Seserot {
         std::string_view fileContent;
         size_t cursor;
         size_t start;
-        ErrorTable& errorTable;
-        SourcePosition position{1,0};
-        SourcePosition startPosition{1,0};
+        ErrorTable &errorTable;
+        SourcePosition position{1, 0};
+        SourcePosition startPosition{1, 0};
+
         void parse();
+
     private:
         const std::vector<std::string> operators = {
                 "<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
@@ -64,11 +70,16 @@ namespace Seserot {
                 "<<", ">>"//generic type arg
         };
         const std::set<char> numberComponents = {
-                '.','e','E','l','L','u','U'
+                '.', 'e', 'E', 'l', 'L', 'u', 'U', // dot & suffix
+                'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F' // Hex
         };
+
         State parseNextChar();
+
         std::string parseLiteral(std::string_view);
+
         void syncStart();
+
         void moveCursor(size_t = 1);
     };
 

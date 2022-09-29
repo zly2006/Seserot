@@ -29,6 +29,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "utils/sum_string.h"
 
+#undef LLVM_ENABLE_ABI_BREAKING_CHECKS
+
 #define HERE sum("At file ", __FILE__, " line ", __LINE__, __func__)
 
 int main(int, char**);
@@ -38,11 +40,13 @@ namespace Seserot {
     using int32 = int;
     using uint32 = unsigned int;
     using int16 = short;
-    using int16 = unsigned short;
+    using uint16 = unsigned short;
     using int8 = char;
     using uint8 = unsigned char;
+
     struct SourcePosition {
         std::string file;
+
         SourcePosition(int _line, int _column) : line(_line), column(_column) {}
 
         SourcePosition() {

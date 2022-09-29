@@ -23,20 +23,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <map>
+#include <llvm/CodeGen/ValueTypes.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/IRBuilder.h>
 #include "ByteCodeWriter.h"
 #include "Symbol.h"
 
 namespace Seserot {
 
+    class Parser;
     class AbstractSyntaxTreeNode {
     public:
         AbstractSyntaxTreeNode();
 
-        AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode& node);
+        AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode &node);
 
-        AbstractSyntaxTreeNode(AbstractSyntaxTreeNode&& node) noexcept;
+        AbstractSyntaxTreeNode(AbstractSyntaxTreeNode &&node) noexcept;
 
         AbstractSyntaxTreeNode &operator=(const AbstractSyntaxTreeNode &rhs);
+
+        ~AbstractSyntaxTreeNode();
+
+        llvm::Value *CodeGen(Parser&);
 
         enum Actions {
             Add,
@@ -80,16 +91,14 @@ namespace Seserot {
         Actions action = Error;
         std::vector<AbstractSyntaxTreeNode> children = {};
 
-        size_t write(char*);
+        size_t write(char *);
 
-        void read(char*, size_t);
+        void read(char *, size_t);
 
         // char*是用来保证new/delete的，所以new的时候必须用char
-        char* data = nullptr;
+        char *data = nullptr;
         size_t dataLength = 0;
-        ClassSymbol* typeInferred = nullptr;
-
-        ~AbstractSyntaxTreeNode();
+        ClassSymbol *typeInferred = nullptr;
     };
 
 } // Seserot

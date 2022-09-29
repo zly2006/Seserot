@@ -64,6 +64,9 @@ namespace Seserot {
         Type type;
 
         Symbol(Seserot::Scope *scope, Type type, std::string name, Symbol *father);
+
+        // make a virtual table for rtti
+        virtual ~Symbol() = default;
     };
 
     struct SymbolWithChildren : Symbol {

@@ -379,14 +379,14 @@ namespace Seserot {
         return (ClassSymbol *) symbol;
     }
 
-    /**@todo
-     * 全都todo
+    /**@todo 全都todo
      */
     void Parser::parseReference() {
         for (auto &item: tokens) {
             if (item.type == Token::Name && item.parsed == Token::Ready) {
                 //searchSymbol(static_cast<typename Symbol::Type>(65535), item.content, token2scope[&item]);
-                reference[&item] = nullptr;
+
+                reference.find(&item);
                 // todo
             }
         }
@@ -581,9 +581,13 @@ namespace Seserot {
                 case Token::Name: {
                     //infix function
                     if (reference.contains(&*tokenIter)) {
-                        auto symbol = reference[&*tokenIter];
-                        if (symbol->type == Symbol::Method) {
-                            auto function = (MethodSymbol *) symbol;
+                        auto symbol = reference.find(&*tokenIter);
+                        if (symbol == reference.end()) {
+                            errorTable.interrupt();
+                            break;
+                        }
+                        if (symbol->second->type == Symbol::Method) {
+                            auto function = (MethodSymbol *) symbol->second;
                             if (function->modifiers & Infix) {
                                 // infix call
                             }
@@ -677,7 +681,7 @@ namespace Seserot {
                     //check suffix(parsed above here)
                     for (int i = 0; i < suffix.length(); ++i) {
                         if (suffix.find(suffix[i], i + 1) != std::string::npos) {
-                            // todo:errcode
+                            // todo: 分配错误码
                             errorTable.errors.emplace_back(tokenIter->start, 0, "repeated number modifier.");
                             break;
                         }

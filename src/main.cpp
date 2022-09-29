@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Parser.h"
 #include "utils/ByteOrder.h"
 
+//int llvm::DisableABIBreakingChecks;
+
 std::optional<int> build(const std::filesystem::path& path) {
     std::filesystem::directory_iterator iterator(path);
     if (!iterator->exists()) {
@@ -46,6 +48,10 @@ int main(int _argc, char **_argv) {
     static_assert(sizeof(int) == 4);
     static_assert(sizeof(long) == 8);
     static_assert(sizeof(char) == 1);
+    static llvm::LLVMContext thisContext;
+    static llvm::IRBuilder<> Builder(thisContext);
+    static std::unique_ptr<llvm::Module> thisModule;
+    static std::map<std::string, llvm::Value *> NamedValues;
     std::vector<std::string> args;
     for (int i = 1; i < _argc; ++i) {
         args.emplace_back(_argv[i]);

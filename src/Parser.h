@@ -18,8 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_PARSER_H
 #define SESEROT_GEN0_PARSER_H
-#include <vector>
 #include "BasicStructures.h"
+#include <vector>
+#include <llvm/CodeGen/ValueTypes.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/IRBuilder.h>
 #include "ErrorTable.h"
 #include "Symbol.h"
 #include "BuildIn.h"
@@ -31,63 +36,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "AbstractSyntaxTreeNode.h"
 
 namespace Seserot {
-    struct Expression{
-        enum Type{
-            VirtualCall,
-            Call,
-            Read,
-            Write,
-        };
-        Type type;
-        Symbol* receiver;
-        std::vector<Expression*> arguments;
-        ClassSymbol* returnType;
-    };
-
     class Parser {
     private:
-        friend int ::main(int, char**);
+        friend int::main(int, char **);
+
         using token_iter = std::vector<Token>::iterator;
     public:
-        BuildIn buildIn;
-        ErrorTable& errorTable;
         Parser(std::vector<Token> tokens, ErrorTable &errorTable);
-        FileScope root;
-        std::vector<Token> tokens;
-        std::map<std::string, NamespaceSymbol*> namespaces;
-        std::map<std::string, ClassSymbol*> classes;
-        std::multimap<std::string, Symbol*> methods;
-        std::vector<VariableSymbol*> variables;
-        std::vector<PropertySymbol*> properties;
+
         void parse();
+
         void reset();
+
         void scan();
 
-        size_t generateStack(MethodSymbol*);
+        size_t generateStack(MethodSymbol *);
+
         void parseReference();
+
         /*void processGeneric();
         void generateTypeVar();
         void parseFunctionAST();*/
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
+
+        BuildIn buildIn;
+        ErrorTable &errorTable;
+        FileScope root;
+        std::vector<Token> tokens;
+        std::map<std::string, NamespaceSymbol *> namespaces;
+        std::map<std::string, ClassSymbol *> classes;
+        std::multimap<std::string, Symbol *> methods;
+        std::vector<VariableSymbol *> variables;
+        std::vector<PropertySymbol *> properties;
+
     private:
-        Token &read(size_t&);
-        std::vector<Symbol*> searchSymbol(Symbol::Type, const std::string&, Scope*);
-        static ClassSymbol* currentClassSymbol(Symbol*);
-        static MethodSymbol* currentMethodSymbol(Symbol*);
+        Token &read(size_t &);
+
+        std::vector<Symbol *> searchSymbol(Symbol::Type, const std::string &, Scope *);
+
+        static ClassSymbol *currentClassSymbol(Symbol *);
+
+        static MethodSymbol *currentMethodSymbol(Symbol *);
+
         AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
+
         static size_t string2FitNumber(const std::string &str, char *ptr, bool = false);
+
         Token &expectIdentifier(size_t &pos);
+
         Token &expectOperator(size_t &pos);
-        bool expectIdentifier(size_t &pos, const std::string& content);
+
+        bool expectIdentifier(size_t &pos, const std::string &content);
 
         template<class T>
-        std::optional<T> convertToNumber(const std::string& str);
+        std::optional<T> convertToNumber(const std::string &str);
 
-        std::map<Token*, Symbol*> reference;
-        std::map<Token*, Scope*> token2scope;
+        std::multimap<Token *, Symbol *> reference;
+        std::map<Token *, Scope *> token2scope;
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
-        const std::set<std::string> modifiers {
+        const std::set<std::string> modifiers{
                 "final",
                 "static",
                 "public",
@@ -100,13 +108,13 @@ namespace Seserot {
                 "partial",
 
         };
-        const std::set<std::string> modifierAccessibility {
+        const std::set<std::string> modifierAccessibility{
                 "public",
                 "protected",
                 "internal",
                 "private"
         };
-        const std::set<std::string> modifierMutable {
+        const std::set<std::string> modifierMutable{
                 "mutable",
                 "immutable"
         };
