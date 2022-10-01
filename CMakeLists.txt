@@ -21,8 +21,6 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # that we wish to use
 llvm_map_components_to_libnames(llvm_libs support core irreader)
 
-# Link against LLVM libraries
-
 add_executable(Seserot
         src/main.cpp
         src/Lexer.cpp
@@ -32,5 +30,10 @@ add_executable(Seserot
         src/BuildIn.cpp
         src/AbstractSyntaxTreeNode.cpp
         src/ByteCodeWriter.cpp
-        src/Symbol.cpp)
+        src/Symbol.cpp
+        src/ast/FloatingConstantNode.cpp
+        src/ast/IntegerConstantNode.cpp src/ast/BinaryOperatorNode.cpp src/ast/BinaryOperatorNode.h src/ast/UnaryOperatorNode.cpp src/ast/UnaryOperatorNode.h)
+
+# Link against LLVM libraries
+target_link_libraries(Seserot ${llvm_libs})
 

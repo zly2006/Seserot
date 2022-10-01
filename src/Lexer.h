@@ -71,7 +71,7 @@ namespace Seserot {
         };
         const std::set<char> numberComponents = {
                 '.', 'e', 'E', 'l', 'L', 'u', 'U', // dot & suffix
-                'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F' // Hex
+                'x', 'X', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F' // Hex
         };
 
         State parseNextChar();

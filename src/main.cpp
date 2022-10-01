@@ -21,12 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <fstream>
 #include <filesystem>
-
+#include <llvm/IR/LLVMContext.h>
 #include "Lexer.h"
 #include "Parser.h"
 #include "utils/ByteOrder.h"
-
-//int llvm::DisableABIBreakingChecks;
 
 std::optional<int> build(const std::filesystem::path& path) {
     std::filesystem::directory_iterator iterator(path);
@@ -55,6 +53,7 @@ int main(int _argc, char **_argv) {
     std::vector<std::string> args;
     for (int i = 1; i < _argc; ++i) {
         args.emplace_back(_argv[i]);
+
     }
     std::cout << "Seserot gen0 " << sizeof(long) * 8 << "bit\n";
     Seserot::ErrorTable errorTable;
@@ -65,6 +64,11 @@ int main(int _argc, char **_argv) {
         std::getline(fin, a);
         file += a + '\n';
     }
+    auto i = [] {
+        return 0;
+    };
+    std::cout<<typeid(i).name();
+    i();
     std::cout << file;
     Seserot::Lexer lexer(errorTable, file);
     lexer.parse();

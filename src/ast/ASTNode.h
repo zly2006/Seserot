@@ -8,7 +8,7 @@ the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
+but WITHOUT ANY WARRANTY; without even the i            mplied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#ifndef SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
-#define SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
+#ifndef SESEROT_AST_NODE_H
+#define SESEROT_AST_NODE_H
+
 #include <utility>
 #include <vector>
 #include <iostream>
@@ -29,28 +30,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
-#include "ByteCodeWriter.h"
-#include "Symbol.h"
 
-namespace Seserot {
-
-    class Parser;
-
-    class AbstractSyntaxTreeNode {
+namespace Seserot::AST {
+    class CodeGenerator {
     public:
-        AbstractSyntaxTreeNode();
+        llvm::LLVMContext *context;
+        llvm::IRBuilder<> *irBuilder;
 
-        AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode &node);
+        CodeGenerator() {
+            context = new llvm::LLVMContext;
+            irBuilder = new llvm::IRBuilder<>(*context);
+        }
+    };
 
-        AbstractSyntaxTreeNode(AbstractSyntaxTreeNode &&node) noexcept;
-
-        AbstractSyntaxTreeNode &operator=(const AbstractSyntaxTreeNode &rhs);
-
-        virtual ~AbstractSyntaxTreeNode();
-
-        llvm::Value *CodeGen(Parser&);
-
+    class ASTNode {
+    public:
         enum Actions {
+            Unknown,
             Add,
             Subtract,
             Multiple,
@@ -81,27 +77,18 @@ namespace Seserot {
             NewInstance,
             Error,
         };
-        enum Tags {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshadow"
-            None = 0,
-#pragma clang diagnostic pop
-            Completed = 1
-        };
-        Tags tag = Tags::None;
-        Actions action = Error;
-        std::vector<AbstractSyntaxTreeNode> children = {};
 
-        size_t write(char *);
+        virtual llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) = 0;
 
-        void read(char *, size_t);
+        virtual ~ASTNode() = default;
 
-        // char*是用来保证new/delete的，所以new的时候必须用char
-        char *data = nullptr;
-        size_t dataLength = 0;
-        ClassSymbol *typeInferred = nullptr;
+        virtual Actions getAction() {
+            return ASTNode::Unknown;
+        }
+
+        ASTNode() = default;
     };
 
 } // Seserot
 
-#endif //SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
+#endif
