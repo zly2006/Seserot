@@ -187,7 +187,7 @@ namespace Seserot {
                                 errorTable.interrupt();
                             }
                             methodSymbol->genericArgs.push_back
-                                    (ClassSymbol(nullptr, genericName.content, {}, nullptr, 0));
+                                    (ClassSymbol(nullptr, genericName.content, {}, nullptr, Modifiers::None));
                         }
                     }
                     Token &args_optional = read(i);
@@ -384,6 +384,7 @@ namespace Seserot {
     void Parser::parseReference() {
         for (auto &item: tokens) {
             if (item.type == Token::Name && item.parsed == Token::Ready) {
+
                 //searchSymbol(static_cast<typename Symbol::Type>(65535), item.content, token2scope[&item]);
 
                 reference.find(&item);
@@ -548,7 +549,9 @@ namespace Seserot {
                         s.pop_back();
                         node->typeInferred = type;
                         node->action = AbstractSyntaxTreeNode::Call;
-                        node->children.push_back({});//todo: method
+                        node->children.emplace_back();//todo: method call
+                        //todo: 这里已经要进行重载决策了
+                        // 同时，之前的类型推断
                         tokenIter++;
                         return node;
                     }

@@ -46,15 +46,43 @@ int main(int _argc, char **_argv) {
     static_assert(sizeof(int) == 4);
     static_assert(sizeof(long) == 8);
     static_assert(sizeof(char) == 1);
-    static llvm::LLVMContext thisContext;
-    static llvm::IRBuilder<> Builder(thisContext);
-    static std::unique_ptr<llvm::Module> thisModule;
-    static std::map<std::string, llvm::Value *> NamedValues;
+
+
+    llvm::LLVMContext thisContext;
+    llvm::IRBuilder<> Builder(thisContext);
+    std::unique_ptr<llvm::Module> thisModule;
+    std::map<std::string, llvm::Value *> NamedValues;
     std::vector<std::string> args;
+    std::cout << "Welcome to Seserot!\nThis program is free software under the GNU General Public License.\n";
     for (int i = 1; i < _argc; ++i) {
         args.emplace_back(_argv[i]);
-
     }
+
+    for (int i = 0; i < args.size(); ++i) {
+        auto& c = args[i];
+        if (c == "-h") {
+            std::cout << R"(
+usage: seserot [-h | -v | --llvm | --build] [source file | project file]
+
+Commands:
+    -h          Show help page.
+    -v          Show version.
+    --llvm      Generate LLVM IR.
+    --build     Generate executable.
+)";
+        }
+        else if (c == "-v") {
+            std::cout << R"(
+Seserot 0.0.1
+)";
+        }
+    }
+
+
+
+
+
+
     std::cout << "Seserot gen0 " << sizeof(long) * 8 << "bit\n";
     Seserot::ErrorTable errorTable;
     std::ifstream fin("../helloworld.se");

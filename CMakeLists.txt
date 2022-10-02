@@ -32,7 +32,9 @@ add_executable(Seserot
         src/ByteCodeWriter.cpp
         src/Symbol.cpp
         src/ast/FloatingConstantNode.cpp
-        src/ast/IntegerConstantNode.cpp src/ast/BinaryOperatorNode.cpp src/ast/BinaryOperatorNode.h src/ast/UnaryOperatorNode.cpp src/ast/UnaryOperatorNode.h)
+        src/ast/IntegerConstantNode.cpp
+        src/ast/BinaryOperatorNode.cpp
+        src/ast/UnaryOperatorNode.cpp)
 
 # Link against LLVM libraries
 target_link_libraries(Seserot ${llvm_libs})

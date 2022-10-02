@@ -27,27 +27,27 @@ namespace Seserot {
                 nullptr,
                 "Void",
                 {},
-                nullptr, Static | ValueType);
+                nullptr, (Modifiers)(Static | ValueType));
         ClassSymbol *const intClass = new ClassSymbol(
                 nullptr,
                 "Int",
                 {},
-                nullptr, Static | ValueType);
+                nullptr, (Modifiers)(Static | ValueType));
         ClassSymbol *const longClass = new ClassSymbol(
                 nullptr,
                 "Long",
                 {},
-                nullptr, Static | ValueType);
+                nullptr, (Modifiers)(Static | ValueType));
         ClassSymbol *const floatClass = new ClassSymbol(
                 nullptr,
                 "Float",
                 {},
-                nullptr, Static | ValueType);
+                nullptr, (Modifiers)(Static | ValueType));
         ClassSymbol *const doubleClass = new ClassSymbol(
                 nullptr,
                 "Double",
                 {},
-                nullptr, Static | ValueType);
+                nullptr, (Modifiers)(Static | ValueType));
         ClassSymbol *const stringClass = new ClassSymbol(
                 nullptr,
                 "String",
@@ -64,15 +64,14 @@ namespace Seserot {
                 {
                         ClassSymbol(nullptr, "P", {}, nullptr, None),
                         ClassSymbol(nullptr, "T", {}, nullptr, None),
-                        ClassSymbol(nullptr, "...", {}, nullptr, None),
+                        ClassSymbol(nullptr, "+", {}, nullptr, None),
                 },
-                nullptr, Static | ValueType);
+                nullptr, (Modifiers)(Static | ValueType));
 
         TraitSymbol *const numberTrait = new TraitSymbol(
                 nullptr,
                 "Number",
-                (Modifiers) (Static | ValueType)
-        );
+                (Modifiers) (Static | ValueType), std::vector<ClassSymbol>(), std::vector<TraitSymbol *>());
     };
 
 } // Seserot

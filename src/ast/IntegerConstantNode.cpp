@@ -22,6 +22,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace Seserot::AST {
 
     llvm::Value *IntegerConstantNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
-        return llvm::ConstantInt::get(context, llvm::APInt(64, v));
+        return llvm::ConstantInt::get(context, v);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(int8 v) {
+        this->v = llvm::APInt(8, v, true);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(uint8 v) {
+        this->v = llvm::APInt(8, v, false);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(int16 v) {
+        this->v = llvm::APInt(16, v, true);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(uint16 v) {
+        this->v = llvm::APInt(16, v, false);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(int32 v) {
+        this->v = llvm::APInt(32, v, true);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(uint32 v) {
+        this->v = llvm::APInt(32, v, false);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(int64 v) {
+        this->v = llvm::APInt(64, v, true);
+    }
+
+    IntegerConstantNode::IntegerConstantNode(uint64 v) {
+        this->v = llvm::APInt(64, v, false);
     }
 }

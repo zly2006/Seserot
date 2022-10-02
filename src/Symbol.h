@@ -23,6 +23,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "BasicStructures.h"
 namespace Seserot {
+    struct Symbol;
+    struct ClassSymbol;
+    struct TraitSymbol;
+    struct VariableSymbol;
+    struct PropertySymbol;
+    struct NamespaceSymbol;
     enum Modifiers {
         None = 0,
         Async = 1,
@@ -38,6 +44,8 @@ namespace Seserot {
         PrivateInternal = 1024,
         Inner = 2048,
         Infix = 4096,
+        Pure = 8192,
+        Vararg = 16384,
     };
 
     bool isPrivateModifier(Modifiers);
@@ -85,24 +93,27 @@ namespace Seserot {
                 const std::string &name);
     };
 
-    struct TraitSymbol;
+    struct TraitSymbol : SymbolWithChildren {
+        TraitSymbol(
+                Seserot::Scope *scope, const std::string &name, Seserot::Modifiers modifiers,
+                std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers);
 
-    struct ClassSymbol : SymbolWithChildren {
+        Modifiers modifiers;
+        std::vector<ClassSymbol> genericArgs;
+        std::vector<TraitSymbol*> fathers;
+
+        bool after(TraitSymbol* symbol);
+    };
+
+    struct ClassSymbol : TraitSymbol {
         ClassSymbol(
                 Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
                 Modifiers modifiers);
 
-        ClassSymbol(
-                Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                int modifiers);
-
-        Modifiers modifiers;
-        std::vector<ClassSymbol> genericArgs;
         /**
          * 弃用
          */
         ClassSymbol *closureFather;
-        std::vector<TraitSymbol*> traits;
         size_t size = 0;
 
         bool operator==(ClassSymbol* another);
@@ -110,23 +121,20 @@ namespace Seserot {
         [[nodiscard]] std::string toString() const;
     };
 
-    struct TraitSymbol : SymbolWithChildren {
-        TraitSymbol(Scope *scope, const std::string &name, Modifiers modifiers);
-
-        Modifiers modifiers;
-        std::vector<ClassSymbol> genericArgs;
-    };
-
     struct MethodSymbol : SymbolWithChildren {
         MethodSymbol(
                 Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                std::vector<ClassSymbol *> args, ClassSymbol *returnType);
+                std::vector<TraitSymbol *> args, TraitSymbol *returnType);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
-        std::vector<ClassSymbol *> args;
-        ClassSymbol *returnType;
+        std::vector<TraitSymbol *> args;
+        TraitSymbol *returnType;
         size_t stackSize;
+
+        MethodSymbol *specialize(std::vector<ClassSymbol*>);
+
+        bool match(std::vector<TraitSymbol*>, std::vector<TraitSymbol*>);
     };
 
     struct VariableSymbol : Symbol {

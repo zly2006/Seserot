@@ -23,8 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace Seserot::AST {
     class IntegerConstantNode : public ASTNode {
     public:
-        uint64 uv;
-        int64 v;
+        llvm::APInt v;
 
         explicit IntegerConstantNode(int8 v);
 
