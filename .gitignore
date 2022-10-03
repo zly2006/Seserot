@@ -11,3 +11,6 @@ CTestTestfile.cmake
 _deps
 cmake-build-debug
 build
+
+# generated from .in
+generated

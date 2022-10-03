@@ -21,7 +21,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # that we wish to use
 llvm_map_components_to_libnames(llvm_libs support core irreader)
 
-configure_file(src/version.h.in version.h)
+configure_file(src/version.h.in generated/version.h)
 
 add_executable(Seserot
         src/main.cpp
