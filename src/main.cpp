@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Lexer.h"
 #include "Parser.h"
 #include "utils/ByteOrder.h"
-#include "version.h"
+#include "generated/version.h"
 #include "test/tester.h"
 
 std::optional<int> build(const std::filesystem::path& path) {
