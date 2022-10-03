@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Lexer.h"
 #include "Parser.h"
 #include "utils/ByteOrder.h"
+#include "version.h"
+#include "test/tester.h"
 
 std::optional<int> build(const std::filesystem::path& path) {
     std::filesystem::directory_iterator iterator(path);
@@ -60,68 +62,42 @@ int main(int _argc, char **_argv) {
 
     for (int i = 0; i < args.size(); ++i) {
         auto& c = args[i];
-        if (c == "-h") {
+        if (c == "-h" || c == "--help") {
             std::cout << R"(
-usage: seserot [-h | -v | --llvm | --build] [source file | project file]
+usage: seserot [-h | -v | --llvm | --build] [options] <source file | project file>...
 
 Commands:
-    -h          Show help page.
-    -v          Show version.
-    --llvm      Generate LLVM IR.
-    --build     Generate executable.
+    -h | -help      Show help page.
+    -v | --version  Show version.
+    --about         Show about message.
+    -b | --build    Generate executable.
+
+Options:
+    --llvm          Don't build, just generate LLVM IR.
 )";
         }
-        else if (c == "-v") {
+        else if (c == "-v" || c == "--version") {
+            std::cout << "Seserot " << SESEROT_VERSION_MAJOR << "." << SESEROT_VERSION_MINOR << "." <<
+                      SESEROT_VERSION_PATCH << "\n";
+        }
+        else if (c == "--about") {
             std::cout << R"(
-Seserot 0.0.1
+Copyright (C) 2022 zly2006
+
+Source: <https://github.com/zly2006/Seserot>
+Homepage: <https://seserot.se> //我好像要谁捐一个/doge
 )";
         }
-    }
-
-
-
-
-
-
-    std::cout << "Seserot gen0 " << sizeof(long) * 8 << "bit\n";
-    Seserot::ErrorTable errorTable;
-    std::ifstream fin("../helloworld.se");
-    std::string file;
-    while (fin) {
-        std::string a;
-        std::getline(fin, a);
-        file += a + '\n';
-    }
-    auto i = [] {
-        return 0;
-    };
-    std::cout<<typeid(i).name();
-    i();
-    std::cout << file;
-    Seserot::Lexer lexer(errorTable, file);
-    lexer.parse();
-    Seserot::Parser parser(lexer.tokens, errorTable);
-    parser.parse();
-    std::cout << "namespaces\n";
-    for (auto &item: parser.namespaces) {
-        std::cout << item.first << "\n";
-    }
-    std::cout << "classes\n";
-    for (auto &item: parser.classes) {
-        std::cout << item.second->toString() << "\n";
-    }
-    std::cout << "methods\n";
-    for (auto &item: parser.methods) {
-        std::cout << item.first << "\n";
-    }
-    {
-        Seserot::ErrorTable errorTable1;
-        Seserot::Lexer lexer1(errorTable, "1+-2");
-        lexer1.parse();
-        Seserot::Parser parser1(lexer1.tokens, errorTable);
-        auto iter = parser1.tokens.begin();
-        auto *p = parser1.parseExpression(iter);
-        std::cout << p;
+        else if (c == "--dev-test") {
+            i++;
+            if (test(args[i])) {
+                std::cout << "test " << args[i] << " passed" << std::endl;
+            }
+            else {
+                std::cout << "test " << args[i] << " failed" << std::endl;
+                return 1;
+            }
+        }
     }
     return 0;
 }

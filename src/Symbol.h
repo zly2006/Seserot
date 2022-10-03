@@ -103,6 +103,8 @@ namespace Seserot {
         std::vector<TraitSymbol*> fathers;
 
         bool after(TraitSymbol* symbol);
+
+        bool afterOrEqual(TraitSymbol* symbol);
     };
 
     struct ClassSymbol : TraitSymbol {
@@ -134,7 +136,17 @@ namespace Seserot {
 
         MethodSymbol *specialize(std::vector<ClassSymbol*>);
 
-        bool match(std::vector<TraitSymbol*>, std::vector<TraitSymbol*>);
+        /**检查是否匹配，支持泛型和vararg
+         * @param params 参数列表
+         * @param classes 输入的类型列表
+         * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
+         */
+        std::optional<std::vector<size_t>> match(std::vector<TraitSymbol*> params, std::vector<TraitSymbol*> classes);
+          /**检查是否匹配，支持泛型和vararg
+         * @param classes 输入的类型列表
+         * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
+         */
+        std::optional<std::vector<size_t>> match(std::vector<TraitSymbol*> classes);
     };
 
     struct VariableSymbol : Symbol {
@@ -147,6 +159,7 @@ namespace Seserot {
         PropertySymbol(
                 Scope *scope, const std::string &name, Symbol *father,
                 Modifiers modifiers);
+
         Modifiers modifiers;
         ClassSymbol* returnType = nullptr;
         MethodSymbol* getter = nullptr;

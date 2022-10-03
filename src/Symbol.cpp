@@ -51,6 +51,10 @@ bool Seserot::TraitSymbol::after(Seserot::TraitSymbol *symbol) {
     return false;
 }
 
+bool Seserot::TraitSymbol::afterOrEqual(Seserot::TraitSymbol *symbol) {
+    return this == symbol || after(symbol);
+}
+
 Seserot::ClassSymbol::ClassSymbol(
         Seserot::Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs,
         Seserot::ClassSymbol *closureFather, Modifiers modifiers)
@@ -128,41 +132,71 @@ Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol
     return pNew;
 }
 
-bool Seserot::MethodSymbol::match(std::vector<TraitSymbol *> params, std::vector<TraitSymbol *> classes) {
+std::optional<std::vector<size_t>> Seserot::MethodSymbol::match
+        (std::vector<TraitSymbol *> params, std::vector<TraitSymbol *> classes) {
+    if (params.empty() && classes.empty()) {
+        return std::vector<size_t>();
+    }
+    auto matchSingle = [this](TraitSymbol* param, TraitSymbol* cls) {
+        if (cls->afterOrEqual(param)) return true;
+        for (const auto &item: genericArgs) {
+            if (&item == param) return true;
+        }
+        // I LOVE U TOO LOVE U TOO
+        return false;
+    };
+    std::vector<size_t> ret;
     size_t index = 0;
     for (auto it = params.begin(); it != params.end(); it++) {
-        auto &param = *it;
-        if (param->modifiers & Vararg) {
-            //todo
+        if ((*it)->modifiers & Vararg) {
             for (size_t i = 0; i <= classes.size() - index; ++i) {
+                bool goon = true;
+                for (int j = 0; j < i; ++j) {
+                    // i是vararg包含的数量
+                    if (!matchSingle(*it, classes[index + j])) {
+                        // 如果i之后有不满足的参数就break，匹配失败
+                        goon = false;
+                        break;
+                    }
+                    ret.push_back(it - params.begin());
+                }
+                if (!goon) {
+                    return {};
+                }
                 std::vector<TraitSymbol *> subClasses;
                 std::vector<TraitSymbol *> subParams;
-                subParams.resize(params.end() - it);
+                subParams.resize(params.end() - it - 1);
                 subClasses.resize(classes.size() - i - index); // i = 0 to all, all =
                 std::copy_n(classes.begin() + index + i, subClasses.size(), subClasses.begin());
-                std::copy(params.begin(), params.end(),subParams.begin());
-                if (match(subParams, subClasses)) {
-                    return true;
-                }
+                std::copy(it + 1, params.end(), subParams.begin());
+                auto r = match(subParams, subClasses);
+                if (r == std::nullopt) continue;
+                std::for_each(ret.begin(), ret.end(), [&](size_t &item) {
+                    ret.push_back(item + (it - params.begin()));
+                });
+                return ret;
             }
-            return false;
         }
         else {
-            if (classes[index]->after(param)) {
+            if (matchSingle(*it, classes[index])) {
+                // 使得 ret[index] = indexOfParams，需要保证每次都这么push
+                ret.push_back(it - params.begin());
                 index++;
             }
             else {
-                for (const auto &genericArg: genericArgs) {
-                    if (param == &genericArg
-                        // todo : && match(where)
-                            )
-                        return true;
-                }
-                return false;
+                return {};
             }
         }
     }
-    return false;
+    if (ret.size() != classes.size()) {
+        // failed
+        return {};
+    }
+    return ret;
+}
+
+std::optional<std::vector<size_t>> Seserot::MethodSymbol::match(std::vector<TraitSymbol *> classes) {
+    return match(args, std::move(classes));
 }
 
 Seserot::NamespaceSymbol::NamespaceSymbol(Seserot::Scope *scope, const std::string &name)
