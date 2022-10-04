@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Symbol.h"
 #include "utils/sum_string.h"
 #include "utils/ByteOrder.h"
+#include "utils/common.h"
 
 #include <utility>
 #include <stack>
@@ -234,7 +235,7 @@ namespace Seserot {
                             msg += " already exists.";
                             errorTable.errors.emplace_back(t.start, 0, msg.c_str());
                         }
-                        auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod);
+                        auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod, nullptr);
                         variables.push_back(pItem);
                     }
                     else if (classSymbol == currentFatherSymbol.top()) {
@@ -875,5 +876,92 @@ namespace Seserot {
             errorTable.interrupt();
         }
         return tokens[pos].type == Token::Operator && tokens[pos].content == content;
+    }
+
+    llvm::Function * Parser::generateFunctionDefinition(MethodSymbol *symbol, const std::string &name) {
+        std::vector<llvm::Type *> Doubles(symbol->args.size(),
+                                          llvm::Type::getDoubleTy(*thisContext));
+        if (!symbol->genericArgs.empty()) {
+            return nullptr;
+        }
+        std::vector<llvm::Type *> args;
+        for (const auto &item: symbol->args) {
+            args.push_back(getLLVMType(item.returnType));
+        }
+
+        llvm::FunctionType *pFunctionType =
+                llvm::FunctionType::get(llvm::Type::getDoubleTy(*thisContext), Doubles, false);
+
+        llvm::Function *pFunction =
+                llvm::Function::Create(pFunctionType, llvm::Function::ExternalLinkage, name, thisModule);
+
+        unsigned Idx = 0;
+        for (auto &Arg : pFunction->args())
+            Arg.setName(symbol->args[Idx++].name);
+
+        return pFunction;
+    }
+
+    llvm::Type *Parser::getLLVMType(TraitSymbol *traitSymbol) {
+        std::map<TraitSymbol *, llvm::Type *> defaultType = {
+                {buildIn.doubleClass, llvm::Type::getDoubleTy(*thisContext)},
+                {buildIn.longClass, llvm::Type::getInt64Ty(*thisContext)},
+                {buildIn.intClass, llvm::Type::getInt32Ty(*thisContext)},
+                {buildIn.stringClass, llvm::Type::getInt16PtrTy(*thisContext)},
+                // todo: build in当时是什么屎山啊……
+        };
+        if (defaultType.contains(traitSymbol)) return defaultType[traitSymbol];
+        if (!traitSymbol->genericArgs.empty()) return nullptr;
+        return nullptr;
+    }
+
+    void Parser::setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module) {
+        this->thisContext = context;
+        this->thisModule = module;
+        this->irBuilder = builder;
+        class A {
+        public:
+            class B {
+            public:
+                class C{
+                public:
+                    class D{
+                    public:
+                        class E{
+                        public:
+                            class F{
+                            public:
+                                class G{
+                                public:
+                                    class H{
+
+                                    };
+
+                                    H h;
+                                };
+
+                                G g;
+                            };
+
+                            F f;
+                        };
+
+                        E e;
+                    };
+
+                    D d;
+                };
+
+                C c;
+            };
+
+            B b;
+        };
+        A a{};
+        dynamic = llvm::StructType::create(*thisContext);
+    }
+
+    void Parser::generateFunctionIR(llvm::Function *symbol, Scope *definition) {
+
     }
 } // Seserot
