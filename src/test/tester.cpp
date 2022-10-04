@@ -37,13 +37,13 @@ bool test(const std::string& what) {
         methodSymbol.args.push_back(numberArg);
         TEST(methodSymbol.match({buildIn.numberTrait}) == expected)
         std::cout << "Testing generic..." << std::endl;
-        methodSymbol.genericArgs.push_back({nullptr, "Test", {}, nullptr, Modifiers::None});
+        methodSymbol.genericArgs.push_back({nullptr, "Test", {}, nullptr, Modifiers::None, {}});
         VariableSymbol myGenericArg = {nullptr, "test", nullptr, Modifiers::None, &methodSymbol.genericArgs[0]};
         methodSymbol.args[0] = myGenericArg;
         TEST(methodSymbol.match({buildIn.numberTrait}) == expected)
         std::cout << "Testing vararg..." << std::endl;
         expected = {};
-        ClassSymbol newClass = {nullptr, "Test", {}, nullptr, Modifiers::None};
+        ClassSymbol newClass = {nullptr, "Test", {}, nullptr, Modifiers::None, {}};
         VariableSymbol newClassArg = {nullptr, "test", nullptr, Modifiers::Vararg, &newClass};
         methodSymbol.args[0] = newClassArg;
         TEST(methodSymbol.match({}) == expected)
@@ -54,8 +54,18 @@ bool test(const std::string& what) {
         TEST(methodSymbol.match({ &newClass, &newClass, buildIn.numberTrait, buildIn.stringClass}) == expected)
         return true;
     }
-    if (what == "hello-world") {
+    else if (what == "hello-world") {
 
+        return true;
+    }
+    else if (what == "trait-symbol-after") {
+        TraitSymbol traitSymbol(nullptr, "Test", Modifiers::None, {}, {});
+        ClassSymbol symbol1 = {nullptr, "Test", {}, nullptr, Modifiers::None, {&traitSymbol}};
+        ClassSymbol symbol2 = {nullptr, "Test", {}, nullptr, Modifiers::None, {&traitSymbol}};
+        TEST(traitSymbol.afterOrEqual(&traitSymbol))
+        TEST(symbol1.afterOrEqual(&traitSymbol))
+        TEST(!symbol2.afterOrEqual(&symbol1))
+        TEST(!symbol2.after(&symbol2))
         return true;
     }
     else {

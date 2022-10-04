@@ -142,7 +142,7 @@ namespace Seserot {
                     if (classes.contains(name))
                         symbol = classes[name];
                     else {
-                        symbol = new ClassSymbol(currentScope, name, {}, nullptr, None);
+                        symbol = new ClassSymbol(currentScope, name, {}, nullptr, None, {});
                         classes.emplace(name, symbol);
                     }
                     while (true) {
@@ -188,7 +188,7 @@ namespace Seserot {
                                 errorTable.interrupt();
                             }
                             methodSymbol->genericArgs.push_back
-                                    (ClassSymbol(nullptr, genericName.content, {}, nullptr, Modifiers::None));
+                                    (ClassSymbol(nullptr, genericName.content, {}, nullptr, Modifiers::None, {}));
                         }
                     }
                     Token &args_optional = read(i);

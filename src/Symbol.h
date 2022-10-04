@@ -110,7 +110,7 @@ namespace Seserot {
     struct ClassSymbol : TraitSymbol {
         ClassSymbol(
                 Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                Modifiers modifiers);
+                Modifiers modifiers, std::vector<TraitSymbol *> fathers);
 
         /**
          * 弃用

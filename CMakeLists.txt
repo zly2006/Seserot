@@ -48,3 +48,4 @@ enable_testing()
 
 add_test(NAME MainTest COMMAND Seserot -v)
 add_test(NAME ParamsMatchingTest COMMAND Seserot --dev-test params-matching)
+add_test(NAME TraitSymbolAfterTest COMMAND Seserot --dev-test trait-symbol-after)
