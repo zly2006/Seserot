@@ -57,8 +57,8 @@ bool Seserot::TraitSymbol::afterOrEqual(Seserot::TraitSymbol *symbol) {
 
 Seserot::ClassSymbol::ClassSymbol(
         Seserot::Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs,
-        Seserot::ClassSymbol *closureFather, Modifiers modifiers)
-        : TraitSymbol(scope, name, modifiers, std::move(genericArgs), {}),
+        Seserot::ClassSymbol *closureFather, Modifiers modifiers, std::vector<TraitSymbol *> fathers)
+        : TraitSymbol(scope, name, modifiers, std::move(genericArgs), fathers),
           closureFather(closureFather) {
     type = Class;
 }

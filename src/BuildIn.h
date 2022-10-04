@@ -23,56 +23,65 @@ namespace Seserot {
 
     class BuildIn {
     public:
-        ClassSymbol *const voidClass = new ClassSymbol(
-                nullptr,
-                "Void",
-                {},
-                nullptr, (Modifiers)(Static | ValueType));
-        ClassSymbol *const intClass = new ClassSymbol(
-                nullptr,
-                "Int",
-                {},
-                nullptr, (Modifiers)(Static | ValueType));
-        ClassSymbol *const longClass = new ClassSymbol(
-                nullptr,
-                "Long",
-                {},
-                nullptr, (Modifiers)(Static | ValueType));
-        ClassSymbol *const floatClass = new ClassSymbol(
-                nullptr,
-                "Float",
-                {},
-                nullptr, (Modifiers)(Static | ValueType));
-        ClassSymbol *const doubleClass = new ClassSymbol(
-                nullptr,
-                "Double",
-                {},
-                nullptr, (Modifiers)(Static | ValueType));
-        ClassSymbol *const stringClass = new ClassSymbol(
-                nullptr,
-                "String",
-                {},
-                nullptr, Static);
-        ClassSymbol *const classClass = new ClassSymbol(
-                nullptr,
-                "Class",
-                {},
-                nullptr, Static);
-        ClassSymbol *const functionClass = new ClassSymbol(
-                nullptr,
-                "Function",
-                {
-                        ClassSymbol(nullptr, "P", {}, nullptr, None),
-                        ClassSymbol(nullptr, "T", {}, nullptr, None),
-                        ClassSymbol(nullptr, "+", {}, nullptr, None),
-                },
-                nullptr, (Modifiers)(Static | ValueType));
-
         TraitSymbol *const numberTrait = new TraitSymbol(
                 nullptr,
                 "Number",
                 (Modifiers) (Static | ValueType), std::vector<ClassSymbol>(), std::vector<TraitSymbol *>());
-    };
+
+        ClassSymbol *const voidClass = new ClassSymbol(
+                nullptr,
+                "Void",
+                {},
+                nullptr, (Modifiers)(Static | ValueType),
+                {});
+        ClassSymbol *const intClass = new ClassSymbol(
+                nullptr,
+                "Int",
+                {},
+                nullptr, (Modifiers)(Static | ValueType),
+                {numberTrait});
+        ClassSymbol *const longClass = new ClassSymbol(
+                nullptr,
+                "Long",
+                {},
+                nullptr, (Modifiers)(Static | ValueType),
+                {numberTrait});
+        ClassSymbol *const floatClass = new ClassSymbol(
+                nullptr,
+                "Float",
+                {},
+                nullptr, (Modifiers)(Static | ValueType),
+                {numberTrait});
+        ClassSymbol *const doubleClass = new ClassSymbol(
+                nullptr,
+                "Double",
+                {},
+                nullptr, (Modifiers)(Static | ValueType),
+                {numberTrait});
+        ClassSymbol *const stringClass = new ClassSymbol(
+                nullptr,
+                "String",
+                {},
+                nullptr, Static,
+                {});
+        ClassSymbol *const classClass = new ClassSymbol(
+                nullptr,
+                "Class",
+                {},
+                nullptr, Static,
+                {});
+        ClassSymbol *const functionClass = new ClassSymbol(
+                nullptr,
+                "Function",
+                {
+                        ClassSymbol(nullptr, "P", {}, nullptr, None, {}),
+                        ClassSymbol(nullptr, "T", {}, nullptr, None, {}),
+                        ClassSymbol(nullptr, "+", {}, nullptr, None, {}),
+                },
+                nullptr, (Modifiers)(Static | ValueType),
+                {});
+
+   };
 
 } // Seserot
 
