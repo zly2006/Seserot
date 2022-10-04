@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_PARSER_H
 #define SESEROT_GEN0_PARSER_H
+
 #include "BasicStructures.h"
 #include <vector>
 #include <llvm/CodeGen/ValueTypes.h>
@@ -57,7 +58,7 @@ namespace Seserot {
 
         void parseReference();
 
-        llvm::Function *generateFunctionDefinition(MethodSymbol *symbol, const std::string& name);
+        llvm::Function *generateFunctionDefinition(MethodSymbol *symbol, const std::string &name);
 
         void generateFunctionIR(llvm::Function *symbol, Scope *definition);
 
@@ -77,9 +78,9 @@ namespace Seserot {
         std::multimap<std::string, Symbol *> methods;
         std::vector<VariableSymbol *> variables;
         std::vector<PropertySymbol *> properties;
-        llvm::LLVMContext *thisContext;
-        llvm::IRBuilder<> *irBuilder;
-        llvm::Module *thisModule;
+        llvm::LLVMContext *thisContext{};
+        llvm::IRBuilder<> *irBuilder{};
+        llvm::Module *thisModule{};
 
         void setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module);
 
@@ -109,7 +110,7 @@ namespace Seserot {
         std::map<Token *, Scope *> token2scope;
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
-        llvm::Type *dynamic;
+        llvm::Type *dynamic{};
         const std::set<std::string> modifiers{
                 "final",
                 "static",

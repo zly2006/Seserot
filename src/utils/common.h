@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 #include <functional>
+
 namespace Seserot::utils {
     template<class T, class P, class Container = std::vector<T>, class OutputContainer = std::vector<P>>
     OutputContainer map(typename Container::itertor first, typename Container::itertor last, std::function<P(T)> func) {

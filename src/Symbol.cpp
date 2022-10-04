@@ -58,7 +58,7 @@ bool Seserot::TraitSymbol::afterOrEqual(Seserot::TraitSymbol *symbol) {
 Seserot::ClassSymbol::ClassSymbol(
         Seserot::Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs,
         Seserot::ClassSymbol *closureFather, Modifiers modifiers, std::vector<TraitSymbol *> fathers)
-        : TraitSymbol(scope, name, modifiers, std::move(genericArgs), fathers),
+        : TraitSymbol(scope, name, modifiers, std::move(genericArgs), std::move(fathers)),
           closureFather(closureFather) {
     type = Class;
 }
@@ -143,7 +143,7 @@ std::optional<std::vector<size_t>> Seserot::MethodSymbol::match
         // 参数空，但是输入不空
         return {};
     }
-    auto matchSingle = [this](TraitSymbol* param, TraitSymbol* cls) {
+    auto matchSingle = [this](TraitSymbol *param, TraitSymbol *cls) {
         if (cls->afterOrEqual(param)) return true;
         for (const auto &item: genericArgs) {
             if (&item == param) return true;

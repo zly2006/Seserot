@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_COMPILER_ERROR_H
 #define SESEROT_GEN0_COMPILER_ERROR_H
+
 #include "BasicStructures.h"
+
 namespace Seserot {
 
     class CompilerError {

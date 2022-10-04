@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "UnaryOperatorNode.h"
+
 namespace Seserot::AST {
     llvm::Value *UnaryOperatorNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
         //irBuilder.CreateBinOp(llvm::Instruction::BinaryOps::Add);

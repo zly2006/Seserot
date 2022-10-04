@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_BUILD_IN_H
 #define SESEROT_GEN0_BUILD_IN_H
+
 #include "Symbol.h"
+
 namespace Seserot {
 
     class BuildIn {
@@ -32,31 +34,31 @@ namespace Seserot {
                 nullptr,
                 "Void",
                 {},
-                nullptr, (Modifiers)(Static | ValueType),
+                nullptr, (Modifiers) (Static | ValueType),
                 {});
         ClassSymbol *const intClass = new ClassSymbol(
                 nullptr,
                 "Int",
                 {},
-                nullptr, (Modifiers)(Static | ValueType),
+                nullptr, (Modifiers) (Static | ValueType),
                 {numberTrait});
         ClassSymbol *const longClass = new ClassSymbol(
                 nullptr,
                 "Long",
                 {},
-                nullptr, (Modifiers)(Static | ValueType),
+                nullptr, (Modifiers) (Static | ValueType),
                 {numberTrait});
         ClassSymbol *const floatClass = new ClassSymbol(
                 nullptr,
                 "Float",
                 {},
-                nullptr, (Modifiers)(Static | ValueType),
+                nullptr, (Modifiers) (Static | ValueType),
                 {numberTrait});
         ClassSymbol *const doubleClass = new ClassSymbol(
                 nullptr,
                 "Double",
                 {},
-                nullptr, (Modifiers)(Static | ValueType),
+                nullptr, (Modifiers) (Static | ValueType),
                 {numberTrait});
         ClassSymbol *const stringClass = new ClassSymbol(
                 nullptr,
@@ -78,10 +80,10 @@ namespace Seserot {
                         ClassSymbol(nullptr, "T", {}, nullptr, None, {}),
                         ClassSymbol(nullptr, "+", {}, nullptr, None, {}),
                 },
-                nullptr, (Modifiers)(Static | ValueType),
+                nullptr, (Modifiers) (Static | ValueType),
                 {});
 
-   };
+    };
 
 } // Seserot
 

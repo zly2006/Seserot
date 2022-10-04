@@ -18,7 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ErrorTable.h"
 #include <iostream>
-void Seserot::ErrorTable::interrupt(const std::string& where) {
+
+void Seserot::ErrorTable::interrupt(const std::string &where) {
     std::cout << where << "\n"
               << "Errors: \n";
     for (auto &item: errors) {
