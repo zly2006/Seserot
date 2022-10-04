@@ -22,9 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <llvm/CodeGen/ValueTypes.h>
 #include <llvm/IR/Value.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/GlobalIFunc.h>
 #include "ErrorTable.h"
 #include "Symbol.h"
 #include "BuildIn.h"
@@ -54,6 +57,12 @@ namespace Seserot {
 
         void parseReference();
 
+        llvm::Function *generateFunctionDefinition(MethodSymbol *symbol, const std::string& name);
+
+        void generateFunctionIR(llvm::Function *symbol, Scope *definition);
+
+        llvm::Type *getLLVMType(TraitSymbol *traitSymbol);
+
         /*void processGeneric();
         void generateTypeVar();
         void parseFunctionAST();*/
@@ -68,6 +77,11 @@ namespace Seserot {
         std::multimap<std::string, Symbol *> methods;
         std::vector<VariableSymbol *> variables;
         std::vector<PropertySymbol *> properties;
+        llvm::LLVMContext *thisContext;
+        llvm::IRBuilder<> *irBuilder;
+        llvm::Module *thisModule;
+
+        void setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module);
 
     private:
         Token &read(size_t &);
@@ -95,6 +109,7 @@ namespace Seserot {
         std::map<Token *, Scope *> token2scope;
         std::vector<MethodSymbol> specializedGenericMethod;
         std::vector<ClassSymbol> specializedGenericClass;
+        llvm::Type *dynamic;
         const std::set<std::string> modifiers{
                 "final",
                 "static",

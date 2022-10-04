@@ -87,12 +87,13 @@ Seserot::PropertySymbol::PropertySymbol(
         scope, Property, name, father), modifiers(modifiers) {}
 
 Seserot::VariableSymbol::VariableSymbol(
-        Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers)
-        : Symbol(scope, Variable, name, father), modifiers(modifiers) {}
+        Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers,
+        Seserot::TraitSymbol *returnType)
+        : Symbol(scope, Variable, name, father), modifiers(modifiers), returnType(returnType) {}
 
 Seserot::MethodSymbol::MethodSymbol(
         Scope *scope, const std::string &name, Modifiers modifiers,
-        std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> args, TraitSymbol *returnType)
+        std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args, TraitSymbol *returnType)
         : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),
           genericArgs(std::move(genericArgs)),
           args(std::move(args)), stackSize(0), returnType(returnType) {}
@@ -125,17 +126,22 @@ Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol
             pNew->returnType = after;
         }
         for (auto &item: pNew->args) {
-            if (item == before)
-                item = after;
+            if (item.returnType == before)
+                item.returnType = after;
         }
     }
     return pNew;
 }
 
 std::optional<std::vector<size_t>> Seserot::MethodSymbol::match
-        (std::vector<TraitSymbol *> params, std::vector<TraitSymbol *> classes) {
+        (std::vector<VariableSymbol> params, std::vector<TraitSymbol *> classes) {
     if (params.empty() && classes.empty()) {
+        // 两个都是空的，那就是完全匹配
         return std::vector<size_t>();
+    }
+    if (params.empty()) {
+        // 参数空，但是输入不空
+        return {};
     }
     auto matchSingle = [this](TraitSymbol* param, TraitSymbol* cls) {
         if (cls->afterOrEqual(param)) return true;
@@ -148,37 +154,50 @@ std::optional<std::vector<size_t>> Seserot::MethodSymbol::match
     std::vector<size_t> ret;
     size_t index = 0;
     for (auto it = params.begin(); it != params.end(); it++) {
-        if ((*it)->modifiers & Vararg) {
+        if (it->modifiers & Vararg) {
             for (size_t i = 0; i <= classes.size() - index; ++i) {
+                size_t varargPackArgCount = classes.size() - index - i;
                 bool goon = true;
-                for (int j = 0; j < i; ++j) {
-                    // i是vararg包含的数量
-                    if (!matchSingle(*it, classes[index + j])) {
-                        // 如果i之后有不满足的参数就break，匹配失败
+                auto retCopy = ret;
+                for (int j = 0; j < varargPackArgCount; ++j) {
+                    if (!matchSingle(it->returnType, classes[index + j])) {
+                        // 如果varargPackArgCount之中有不满足的参数就break，匹配失败
                         goon = false;
                         break;
                     }
                     ret.push_back(it - params.begin());
                 }
                 if (!goon) {
-                    return {};
+                    // 匹配失败
+                    ret = retCopy;
+                    continue;
                 }
                 std::vector<TraitSymbol *> subClasses;
-                std::vector<TraitSymbol *> subParams;
-                subParams.resize(params.end() - it - 1);
-                subClasses.resize(classes.size() - i - index); // i = 0 to all, all =
-                std::copy_n(classes.begin() + index + i, subClasses.size(), subClasses.begin());
-                std::copy(it + 1, params.end(), subParams.begin());
+                std::vector<VariableSymbol> subParams;
+                subClasses.resize(classes.size() - varargPackArgCount - index); // varargPackArgCount = 0 to all, all =
+                subParams.reserve(params.end() - it - 1);
+                std::copy_n(classes.begin() + index + varargPackArgCount, subClasses.size(), subClasses.begin());
+                for (auto iter = it + 1; iter != params.end(); iter++) {
+                    subParams.push_back(*iter);
+                }
                 auto r = match(subParams, subClasses);
-                if (r == std::nullopt) continue;
-                std::for_each(ret.begin(), ret.end(), [&](size_t &item) {
-                    ret.push_back(item + (it - params.begin()));
+                if (r == std::nullopt) {
+                    // 匹配失败
+                    ret = retCopy;
+                    continue;
+                }
+                std::for_each(r->begin(), r->end(), [&](size_t &item) {
+                    // item 本来的值
+                    // 1 当前的这个参数
+                    // it - params.begin() 这个参数之前的参数数量
+                    ret.push_back(item + 1 + (it - params.begin()));
                 });
+                // 匹配成功，因为剩下的参数都匹配完了，这里直接return
                 return ret;
             }
         }
         else {
-            if (matchSingle(*it, classes[index])) {
+            if (matchSingle(it->returnType, classes[index])) {
                 // 使得 ret[index] = indexOfParams，需要保证每次都这么push
                 ret.push_back(it - params.begin());
                 index++;

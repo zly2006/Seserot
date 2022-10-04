@@ -90,6 +90,7 @@ Homepage: <https://seserot.se> //我好像要谁捐一个/doge
         }
         else if (c == "--dev-test") {
             i++;
+            std::cout << "Testing " << args[i] << "...\n";
             if (test(args[i])) {
                 std::cout << "test " << args[i] << " passed" << std::endl;
             }
