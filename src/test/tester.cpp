@@ -27,7 +27,7 @@ using namespace llvm;
 
 #define TEST(expr) if (!(expr)) { std::cout << "test for `" #expr "` failed\n"; return false; }
 
-bool test(const std::string& what) {
+bool test(const std::string &what) {
     if (what == "params-matching") {
         MethodSymbol methodSymbol(nullptr, "test", Modifiers::None, {}, {}, nullptr);
         BuildIn buildIn;
@@ -48,10 +48,10 @@ bool test(const std::string& what) {
         methodSymbol.args[0] = newClassArg;
         TEST(methodSymbol.match({}) == expected)
         std::cout << "Testing all..." << std::endl;
-        expected = { 0, 0, 1, 1};
+        expected = {0, 0, 1, 1};
         myGenericArg.modifiers = Modifiers::Vararg;
         methodSymbol.args.push_back(myGenericArg);
-        TEST(methodSymbol.match({ &newClass, &newClass, buildIn.numberTrait, buildIn.stringClass}) == expected)
+        TEST(methodSymbol.match({&newClass, &newClass, buildIn.numberTrait, buildIn.stringClass}) == expected)
         return true;
     }
     else if (what == "hello-world") {

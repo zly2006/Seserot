@@ -76,7 +76,7 @@ namespace Seserot {
         node.data = nullptr;
     }
 
-    AbstractSyntaxTreeNode::AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode& node) {
+    AbstractSyntaxTreeNode::AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode &node) {
         data = new char[node.dataLength];
         dataLength = node.dataLength;
         action = node.action;
@@ -99,6 +99,7 @@ namespace Seserot {
     }
 
     llvm::Value *AbstractSyntaxTreeNode::CodeGen(Parser &parser) {
+        // todo
         return nullptr;
     }
 

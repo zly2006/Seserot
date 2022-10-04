@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "CompilerError.h"
 #include <iostream>
 #include <utility>
+
 namespace Seserot {
     std::string CompilerError::print() {
         char s[100];

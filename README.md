@@ -16,4 +16,5 @@ My toy compiler
 
 ## How to Build
 
-This compiler is based on [LLVM](https://llvm.org), so you need to [install llvm](https://llvm.org/docs/CMake.html) before building this compiler.
+This compiler is based on [LLVM](https://llvm.org), so you need to [install llvm](https://llvm.org/docs/CMake.html)
+before building this compiler.

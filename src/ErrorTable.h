@@ -18,13 +18,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_ERROR_TABLE_H
 #define SESEROT_GEN0_ERROR_TABLE_H
+
 #include "CompilerError.h"
 #include "vector"
+
 namespace Seserot {
     class ErrorTable {
     public:
         std::vector<CompilerError> errors{};
-        void interrupt(const std::string& = "");
+
+        void interrupt(const std::string & = "");
     };
 }
 

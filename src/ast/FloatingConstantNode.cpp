@@ -25,6 +25,6 @@ namespace Seserot::AST {
     }
 
     llvm::Value *FloatingConstantNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
-        return llvm::ConstantFP::get(context, llvm::APFloat(v));;
+        return llvm::ConstantFP::get(context, llvm::APFloat(v));
     }
 }

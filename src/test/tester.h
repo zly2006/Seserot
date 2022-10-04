@@ -18,6 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_TESTER_H
 #define SESEROT_GEN0_TESTER_H
+
 #include <string>
-bool test(const std::string& what);
+
+bool test(const std::string &what);
+
 #endif //SESEROT_GEN0_TESTER_H

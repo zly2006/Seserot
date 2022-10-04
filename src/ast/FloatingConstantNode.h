@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_FLOATING_CONSTANT_NODE_H
 #define SESEROT_FLOATING_CONSTANT_NODE_H
+
 #include "ASTNode.h"
+
 namespace Seserot::AST {
     class FloatingConstantNode : public ASTNode {
     public:

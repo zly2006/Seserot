@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
 #define SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
+
 #include <utility>
 #include <vector>
 #include <iostream>
@@ -48,7 +49,7 @@ namespace Seserot {
 
         virtual ~AbstractSyntaxTreeNode();
 
-        llvm::Value *CodeGen(Parser&);
+        llvm::Value *CodeGen(Parser &);
 
         enum Actions {
             Add,

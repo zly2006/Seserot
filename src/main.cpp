@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "generated/version.h"
 #include "test/tester.h"
 
-std::optional<int> build(const std::filesystem::path& path) {
+std::optional<int> build(const std::filesystem::path &path) {
     std::filesystem::directory_iterator iterator(path);
     if (!iterator->exists()) {
         return {};
@@ -61,7 +61,7 @@ int main(int _argc, char **_argv) {
     }
 
     for (int i = 0; i < args.size(); ++i) {
-        auto& c = args[i];
+        auto &c = args[i];
         if (c == "-h" || c == "--help") {
             std::cout << R"(
 usage: seserot [-h | -v | --llvm | --build] [options] <source file | project file>...

@@ -18,8 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef SESEROT_FLOATING_CONSTANT_NODE_H
 #define SESEROT_FLOATING_CONSTANT_NODE_H
+
 #include "ASTNode.h"
 #include "../BasicStructures.h"
+
 namespace Seserot::AST {
     class IntegerConstantNode : public ASTNode {
     public:
