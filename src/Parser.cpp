@@ -21,6 +21,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "utils/sum_string.h"
 #include "utils/ByteOrder.h"
 #include "utils/common.h"
+#include "ast/ASTNode.h"
+#include "ast/IfElseNode.h"
+#include "ast/IntegerConstantNode.h"
+#include "ast/FloatingConstantNode.h"
+#include "ast/UnaryOperatorNode.h"
+#include "ast/FunctionInvokeNode.h"
+#include "ast/FloatingConstantNode.h"
+#include "ast/StringConstantNode.h"
+#include "ast/BinaryOperatorNode.h"
+
 
 #include <utility>
 #include <stack>
@@ -117,11 +127,19 @@ namespace Seserot {
                     if (currentFatherSymbol.top() != rootNamespace) {
                         name = currentFatherSymbol.top()->name + "." + name;
                     }
+                    auto *ns = new NamespaceSymbol(currentScope, name);
                     if (!namespaces.contains(name)) {
-                        namespaces.emplace(name, new NamespaceSymbol(currentScope, name));
+                        namespaces.emplace(name, ns);
                     }
-                    // 华风夏韵，洛水天依。
-                    currentFatherSymbol.push(namespaces[name]);
+                    if (tokens[i].content == "{" && tokens[i].type == Token::Operator) {
+                        newScope(tokens[i]);
+                        ns->childScope = currentScope;
+                        break;
+                    } // 华风夏韵，洛水天依。
+                    else {
+                        ns->childScope = &root;
+                    }
+                    currentFatherSymbol.push(ns);
                 }
                 else if (tokens[i].content == "class") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
@@ -394,11 +412,29 @@ namespace Seserot {
         }
     }
 
-    /**正常的parser流程的啦
+    /**
+     * 正常的parser流程的啦
      */
     void Parser::parse() {
         reset();
         scan();
+        std::vector<std::string_view> imports;
+        for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+            if (it->content == "import" && it->type == Token::Name) {
+                if (it->parsed != Token::Ready || it + 1 == tokens.end()) {
+                    // todo:分配错误码
+                    errorTable.errors.emplace_back(it->start, 0, "error import statement.");
+                }
+                it->parsed = Token::Statement;
+                it++;
+                if (it->type != Token::Name) {
+                    // todo:分配错误码
+                    errorTable.errors.emplace_back(it->start, 0, "error import statement.");
+                }
+                imports.push_back(it->content);
+            }
+        }
+        importSymbols(imports);
         parseReference();
     }
 
@@ -444,54 +480,55 @@ namespace Seserot {
         return 0;//todo
     }
 
-    AbstractSyntaxTreeNode *Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
-        std::vector<std::variant<AbstractSyntaxTreeNode, std::string>> s;
-        const std::map<std::string, AbstractSyntaxTreeNode::Actions> actionMap{
-                {"+",  AbstractSyntaxTreeNode::Add},
-                {"-",  AbstractSyntaxTreeNode::Subtract},
-                {"*",  AbstractSyntaxTreeNode::Multiple},
-                {"/",  AbstractSyntaxTreeNode::Divide},
-                {"%",  AbstractSyntaxTreeNode::Mod},
-                {"&&", AbstractSyntaxTreeNode::LogicAnd},
-                {"||", AbstractSyntaxTreeNode::LogicOr},
-                {"!",  AbstractSyntaxTreeNode::LogicNot},
-                {"&",  AbstractSyntaxTreeNode::BitAnd},
-                {"|",  AbstractSyntaxTreeNode::BitOr},
-                {"~",  AbstractSyntaxTreeNode::BitNot},
-                {"<<", AbstractSyntaxTreeNode::LeftShift},
-                {">>", AbstractSyntaxTreeNode::RightShift},
-                {"^",  AbstractSyntaxTreeNode::BitXor}
+    AST::ASTNode *Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
+        AST::ASTNode::Actions actions;
+        std::vector<std::variant<AST::ASTNode *, std::string>> s;
+        const std::map<std::string, AST::ASTNode::Actions> actionMap{
+                {"+",  AST::ASTNode::Actions::Add},
+                {"-",  AST::ASTNode::Actions::Subtract},
+                {"*",  AST::ASTNode::Actions::Multiple},
+                {"/",  AST::ASTNode::Actions::Divide},
+                {"%",  AST::ASTNode::Actions::Mod},
+                {"&&", AST::ASTNode::Actions::LogicAnd},
+                {"||", AST::ASTNode::Actions::LogicOr},
+                {"!",  AST::ASTNode::Actions::LogicNot},
+                {"&",  AST::ASTNode::Actions::BitAnd},
+                {"|",  AST::ASTNode::Actions::BitOr},
+                {"~",  AST::ASTNode::Actions::BitNot},
+                {"<<", AST::ASTNode::Actions::LeftShift},
+                {">>", AST::ASTNode::Actions::RightShift},
+                {"^",  AST::ASTNode::Actions::BitXor}
         };
-        const std::vector<std::set<AbstractSyntaxTreeNode::Actions>> priority{
+        const std::vector<std::set<AST::ASTNode::Actions>> priority{
                 {
-                        AbstractSyntaxTreeNode::Multiple,
-                        AbstractSyntaxTreeNode::Divide,
-                        AbstractSyntaxTreeNode::Mod,
+                        AST::ASTNode::Actions::Multiple,
+                        AST::ASTNode::Actions::Divide,
+                        AST::ASTNode::Actions::Mod,
                 },
                 {
-                        AbstractSyntaxTreeNode::Add,
-                        AbstractSyntaxTreeNode::Subtract,
+                        AST::ASTNode::Actions::Add,
+                        AST::ASTNode::Actions::Subtract,
                 },
                 {
-                        AbstractSyntaxTreeNode::BitAnd,
-                        AbstractSyntaxTreeNode::BitOr,
-                        AbstractSyntaxTreeNode::BitNot,
-                        AbstractSyntaxTreeNode::BitXor,
-                        AbstractSyntaxTreeNode::RightShift,
-                        AbstractSyntaxTreeNode::LeftShift,
+                        AST::ASTNode::Actions::BitAnd,
+                        AST::ASTNode::Actions::BitOr,
+                        AST::ASTNode::Actions::BitNot,
+                        AST::ASTNode::Actions::BitXor,
+                        AST::ASTNode::Actions::RightShift,
+                        AST::ASTNode::Actions::LeftShift,
                 },
                 {
-                        AbstractSyntaxTreeNode::LogicNot,
-                        AbstractSyntaxTreeNode::LogicAnd,
-                        AbstractSyntaxTreeNode::LogicOr,
+                        AST::ASTNode::Actions::LogicNot,
+                        AST::ASTNode::Actions::LogicAnd,
+                        AST::ASTNode::Actions::LogicOr,
                 },
                 {
                         //赋值
                 }
         };
-        const std::set<AbstractSyntaxTreeNode::Actions> unary = {
-                AbstractSyntaxTreeNode::BitNot,
-                AbstractSyntaxTreeNode::LogicNot,
+        const std::set<AST::ASTNode::Actions> unary = {
+                AST::ASTNode::Actions::BitNot,
+                AST::ASTNode::Actions::LogicNot,
         };
         // 1. member access
         // 2. bracket () []
@@ -541,21 +578,6 @@ namespace Seserot {
                         break;//因为括号结束
                     }
 
-                    if (!s.empty() && s.back().index() == 0 &&
-                        tokenIter->type == Token::Operator && tokenIter->content == "(") {
-                        // function
-                        // this field's purpose is to identify which function should be called.
-                        ClassSymbol *type = nullptr;
-                        auto *node = new AbstractSyntaxTreeNode();
-                        s.pop_back();
-                        node->typeInferred = type;
-                        node->action = AbstractSyntaxTreeNode::Call;
-                        node->children.emplace_back();//todo: method call
-                        //todo: 这里已经要进行重载决策了
-                        // 同时，之前的类型推断
-                        tokenIter++;
-                        return node;
-                    }
                     else if (tokenIter->type == Token::Operator && tokenIter->content == "(") {
                         // brackets
                         tokenIter++;
@@ -566,7 +588,7 @@ namespace Seserot {
                             errorTable.interrupt();
                         }
                         if (tokenIter->type == Token::Operator && tokenIter->content == ")") {
-                            s.emplace_back(*expr);
+                            s.emplace_back(expr);
                             tokenIter++;
                         }
                         else {
@@ -583,6 +605,31 @@ namespace Seserot {
                     break;
                 }
                 case Token::Name: {
+                    if ( tokenIter + 1 != tokens.end() && (tokenIter + 1)->type == Token::Operator &&
+                         (tokenIter + 1)->content == "(") {
+                        // function
+                        // this field's purpose is to identify which function should be called.
+                        //todo: 这里已经要进行重载决策了
+                        // 同时，之前的类型推断
+                        MethodSymbol *methodSymbol = nullptr;
+                        for (const auto &item: methods) {
+                            auto *method = (MethodSymbol*)item.second;
+                            if (method->name == tokenIter->content) {
+                                if (method->match({})) {
+                                    //todo: 重载决策
+                                }
+                            }
+                        }
+                        if (!methodSymbol) {
+                            //todo: 分配错误码
+                            errorTable.errors.emplace_back(tokenIter->start, 0, "No such function.");
+                        }
+                        auto *pNode = new AST::FunctionInvokeNode(methodSymbol);
+                        s.pop_back();
+                        // todo: set args
+                        tokenIter++;
+                        s.push_back(pNode);
+                    }
                     //infix function
                     if (reference.contains(&*tokenIter)) {
                         auto symbol = reference.find(&*tokenIter);
@@ -600,7 +647,7 @@ namespace Seserot {
                     break;
                 }
                 case Token::Number: {
-                    AbstractSyntaxTreeNode::Actions action = AbstractSyntaxTreeNode::LiteralLong;
+                    AST::ASTNode::Actions action = AST::ASTNode::Actions::LiteralLong;
                     bool negative = false;
                     // negative number
                     if (!s.empty() && s.back().index() == 1) {
@@ -618,7 +665,7 @@ namespace Seserot {
                     std::string toParse = tokenIter->content;
                     long power = 0;//e后面的指数
                     size_t size;
-                    AbstractSyntaxTreeNode node;
+                    AST::ASTNode *node;
                     std::variant<long long, long double, unsigned long long> v;
                     std::string suffix;
                     if (auto index = toParse.find('e'); index != std::string::npos) {
@@ -627,12 +674,12 @@ namespace Seserot {
                         power = strtol(str.c_str(), &end, 10);
                         suffix = end;
                         toParse = toParse.substr(0, index);
-                        action = AbstractSyntaxTreeNode::LiteralDouble;
+                        action = AST::ASTNode::Actions::LiteralDouble;
                     }
                     // 'e' or '.' is double
-                    if (tokenIter->content.find('.') != -1 || action == AbstractSyntaxTreeNode::LiteralDouble) {
+                    if (tokenIter->content.find('.') != -1 || action == AST::ASTNode::Actions::LiteralDouble) {
                         // 小数
-                        action = AbstractSyntaxTreeNode::LiteralDouble;
+                        action = AST::ASTNode::Actions::LiteralDouble;
                         char *end;
                         double value = strtod(tokenIter->content.c_str(), &end);
                         if (!suffix.empty() || strlen(end) != 0) {
@@ -648,39 +695,18 @@ namespace Seserot {
                         if (std::isnan(value) || std::isinf(value)) {
                             errorTable.errors.emplace_back(tokenIter->start, 0, "bad literal: NaN / Inf");
                         }
-                        node.data = new char[8];
-                        node.dataLength = 8;
-                        memcpy(node.data, &value, 8);
+                        node = new AST::FloatingConstantNode(value);
                     }
                     else {
-                        char *ptr = new char[8];
-                        size = string2FitNumber(toParse, ptr, negative);
-                        if (size == 256) {
+                        size_t val;
+
+                        node = string2FitNumber(toParse, val, negative);
+                        if (!node) {
                             //todo: 分配错误码
                             errorTable.errors.emplace_back(tokenIter->start, 0, "number size overflowed.");
+                            node = new AST::IntegerConstantNode(0);
                         }
-                        if (size == 0) {
-                            errorTable.errors.emplace_back(tokenIter->start, 1000,
-                                                           "parse number literal @" + HERE);
-                        }
-                        switch (size) {
-                            case 1:
-                                node.action = AbstractSyntaxTreeNode::LiteralByte;
-                                break;
-                            case 2:
-                                node.action = AbstractSyntaxTreeNode::LiteralShort;
-                                break;
-                            case 4:
-                                node.action = AbstractSyntaxTreeNode::LiteralInt;
-                                break;
-                            default:
-                                break;
-                        }
-                        node.dataLength = size;
-                        node.data = ptr;
                     }
-
-                    node.action = action;
 
                     //check suffix(parsed above here)
                     for (int i = 0; i < suffix.length(); ++i) {
@@ -696,12 +722,7 @@ namespace Seserot {
                     break;
                 }
                 case Token::Literal: {
-                    AbstractSyntaxTreeNode node;
-                    node.action = AbstractSyntaxTreeNode::LiteralString;
-                    node.dataLength = tokenIter->content.length();
-                    node.data = new char[node.dataLength];
-                    memcpy(node.data, tokenIter->content.c_str(), node.dataLength);
-                    s.emplace_back(node);
+                    s.emplace_back(new AST::StringConstantNode{tokenIter->content});
                     tokenIter++;
                     break;
                 }
@@ -720,15 +741,15 @@ namespace Seserot {
         for (const auto & set : priority) {
             for (auto it = s.begin(); it != s.end(); it++) {
                 if (it->index() == 1) {
-                    AbstractSyntaxTreeNode::Actions action = actionMap.at(std::get<std::string>(*it));
+                    AST::ASTNode::Actions action = actionMap.at(std::get<std::string>(*it));
                     if (set.contains(action)) {
                         if (unary.contains(action)) {
-                            AbstractSyntaxTreeNode node;
-                            node.action = action;
+                            auto *node = new AST::UnaryOperatorNode();
+                            node->action = action;
                             // it -> op
                             it = s.erase(it);
                             // it -> obj
-                            node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
+                            node->child = std::get<0>(*it);
                             it = s.erase(it);
                             // it -> obj+1
                             it = s.insert(it, node);
@@ -740,17 +761,17 @@ namespace Seserot {
                         errorTable.interrupt();
                     }
                     else {
-                        AbstractSyntaxTreeNode node;
-                        node.action = action;
+                        auto *node = new AST::BinaryOperatorNode();
+                        node->action = action;
                         // it -> op
                         it--;
                         // it -> op-1
-                        node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
+                        node->left = std::get<0>(*it);
                         it = s.erase(it);
                         // it -> op
                         it = s.erase(it);
                         // it -> op+1
-                        node.children.push_back(std::get<AbstractSyntaxTreeNode>(*it));
+                        node->right = std::get<0>(*it);
                         it = s.erase(it);
                         // it -> op+2
                         it = s.insert(it, node);
@@ -760,7 +781,7 @@ namespace Seserot {
         }
 
         if (s.size() == 1 && s.front().index() == 0) {
-            return new AbstractSyntaxTreeNode(std::get<0>(s.front()));
+            return std::get<0>(s.front());
         }
         return nullptr;
     }
@@ -780,58 +801,45 @@ namespace Seserot {
     /**
      * 将包含正数的字符串转为数字并检查溢出
      * @param str 正数，不含非数字字符
-     * @param ptr 返回一个持久化保存的对象，类型是char数组，可以delete，保证是小端序
+     * @param ret 返回值
      * @param negative 表示这个数字是不是false
      * @return 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
      */
-    size_t Parser::string2FitNumber(const std::string &str, char *ptr, bool negative) {
+    AST::IntegerConstantNode *Parser::string2FitNumber(const std::string &str, size_t &ret, bool negative) {
         std::stringstream ss;
         unsigned long long ll;
         ss << str;
         ss >> ll;
         auto processNegative = [&]() {
             if (negative) ll = -ll;
+            ret = ll;
         };
         if (!ss.eof() || (ll & 0x8000000000000000ull)) {
-            return 0;
+            return nullptr;
         }
         if (!ss) {
-            return 256;
+            return nullptr;
         }
-        if (ll & 0xffffffff00000000ull ||
-            (negative && (ll & 80000000ull))) {
-            processNegative();
-            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
-                std::reverse_copy(&ll, &ll + 8, ptr);
-            else
-                memcpy(ptr, &ll, 8);
-            return 8;
+        if (ll & 0xffffffff00000000ull) {
+            return new AST::IntegerConstantNode((uint64) ll);
         }
-        else if (ll & 0xffff0000ull ||
-                 (negative && (ll & 8000ull))) {
-            processNegative();
-            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
-                std::reverse_copy(&ll + 4, &ll + 8, ptr);
-            else
-                memcpy(ptr, &ll, 4);
-            return 4;
+        else if (negative && (ll & 80000000ull)) {
+            return new AST::IntegerConstantNode((int64) -ll);
         }
-        else if (ll & 0xff00ull ||
-                 (negative && (ll & 80ull))) {
-            processNegative();
-            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
-                std::reverse_copy(&ll + 6, &ll + 8, ptr);
-            else
-                memcpy(ptr, &ll, 2);
-            return 2;
+        else if (ll & 0xffff0000ull) {
+            return new AST::IntegerConstantNode((uint32) ll);
+        }
+        else if (negative && (ll & 8000ull)) {
+            return new AST::IntegerConstantNode((int32) -ll);
+        }
+        else if (ll & 0xff00ull) {
+            return new AST::IntegerConstantNode((uint16) ll);
+        }
+        else if (negative && (ll & 80ull)) {
+            return new AST::IntegerConstantNode((int16) -ll);
         }
         else {
-            processNegative();
-            if constexpr (getEndianOrder() == hl_endianness::HL_BIG_ENDIAN)
-                std::reverse_copy(&ll + 7, &ll + 8, ptr);
-            else
-                memcpy(ptr, &ll, 1);
-            return 1;
+            return new AST::IntegerConstantNode((int8) ll);
         }
     }
 
@@ -923,6 +931,10 @@ namespace Seserot {
     }
 
     void Parser::generateFunctionIR(llvm::Function *symbol, Scope *definition) {
+
+    }
+
+    void Parser::importSymbols(const std::vector<std::string_view> &symbols) {
 
     }
 } // Seserot

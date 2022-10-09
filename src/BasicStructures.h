@@ -34,7 +34,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define HERE sum("At file ", __FILE__, " line ", __LINE__, __func__)
 
-int main(int, char **);
+#ifdef TEXT
+#undef TEXT
+#endif
+#define TEXT(x) #x
+
+int main(int, char **, char **);
 
 namespace Seserot {
     using int64 = long long;

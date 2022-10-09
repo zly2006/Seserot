@@ -23,8 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot::AST {
     class UnaryOperatorNode : public ASTNode {
-        Actions action;
     public:
+        Actions action;
         ASTNode *child;
 
         Actions getAction() override;

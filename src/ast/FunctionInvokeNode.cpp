@@ -16,22 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "BinaryOperatorNode.h"
+#include "FunctionInvokeNode.h"
 
-namespace Seserot::AST {
-    llvm::Value *BinaryOperatorNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
-        llvm::Value *leftValue = left->codeGen(irBuilder, context);
-        llvm::Value *rightValue = right->codeGen(irBuilder, context);
-        if (action == Actions::Subtract) {
-            return irBuilder.CreateAdd(leftValue, rightValue, "addtmp");
-        }
-        // todo: other actions
-        else {
-            return nullptr;
-        }
-    }
+Seserot::AST::ASTNode::Actions Seserot::AST::FunctionInvokeNode::getAction() {
+    return Actions::Call;
+}
 
-    ASTNode::Actions BinaryOperatorNode::getAction() {
-        return action;
+llvm::Value *Seserot::AST::FunctionInvokeNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
+    return nullptr;
+}
+
+Seserot::AST::FunctionInvokeNode::FunctionInvokeNode(Seserot::MethodSymbol *methodSymbol) : methodSymbol(
+        methodSymbol) {
+    if (!methodSymbol->genericArgs.empty()) {
+        throw std::runtime_error("Generic function cannot be invoked directly");
     }
-} // AST
+    inferredType = methodSymbol->returnType;
+}

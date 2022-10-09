@@ -19,9 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "CompilerError.h"
 #include <iostream>
 #include <utility>
+#define _LIBCPP_HAS_NO_INCOMPLETE_FORMAT
+#undef _LIBCPP_HAS_NO_INCOMPLETE_FORMAT
+#include <format>
 
 namespace Seserot {
+    std::numeric_limits<double> double_limits;
     std::string CompilerError::print() {
+        double_limits.digits;
         char s[100];
         sprintf(s, "    E%zu[%s]:%s\n      @%s(line %zu, column %zu)", code, category.c_str(),
                 message.c_str(), where.file.c_str(), where.line, where.column);

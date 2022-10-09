@@ -37,12 +37,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <set>
 #include <any>
 #include <optional>
-#include "AbstractSyntaxTreeNode.h"
+#include "ast/ASTNode.h"
+#include "ast/IntegerConstantNode.h"
 
 namespace Seserot {
     class Parser {
     private:
-        friend int::main(int, char **);
+        friend int::main(int, char **, char **);
 
         using token_iter = std::vector<Token>::iterator;
     public:
@@ -85,6 +86,8 @@ namespace Seserot {
         void setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module);
 
     private:
+        void importSymbols(const std::vector<std::string_view> &symbols);
+
         Token &read(size_t &);
 
         std::vector<Symbol *> searchSymbol(Symbol::Type, const std::string &, Scope *);
@@ -93,9 +96,9 @@ namespace Seserot {
 
         static MethodSymbol *currentMethodSymbol(Symbol *);
 
-        AbstractSyntaxTreeNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
+        AST::ASTNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
 
-        static size_t string2FitNumber(const std::string &str, char *ptr, bool = false);
+        static AST::IntegerConstantNode *string2FitNumber(const std::string &str, size_t &ret, bool = false);
 
         Token &expectIdentifier(size_t &pos);
 
