@@ -19,8 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "tester.h"
 #include "../Symbol.h"
 #include "../Parser.h"
+#include "../Lexer.h"
 #include "../utils/sum_string.h"
+#include "../utils/myFormat.h"
 #include <iostream>
+#include <random>
 
 using namespace Seserot;
 using namespace llvm;
@@ -55,6 +58,15 @@ bool test(const std::string &what) {
         return true;
     }
     else if (what == "hello-world") {
+        using namespace Seserot;
+        ErrorTable errorTable;
+        Lexer lexer(errorTable, "print(\"Hello, world!\")");
+        Parser parser(lexer.tokens, errorTable);
+        parser.parse();
+        LLVMContext context;
+        Module module("hello-world", context);
+        IRBuilder<> irBuilder(context);
+        parser.setupCodegen(&context, &irBuilder, &module);
 
         return true;
     }

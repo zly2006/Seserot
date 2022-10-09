@@ -16,22 +16,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "BinaryOperatorNode.h"
+#ifndef SESEROT_GEN0_STRINGCONSTANTNODE_H
+#define SESEROT_GEN0_STRINGCONSTANTNODE_H
+
+#include "ASTNode.h"
+#include <string>
 
 namespace Seserot::AST {
-    llvm::Value *BinaryOperatorNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
-        llvm::Value *leftValue = left->codeGen(irBuilder, context);
-        llvm::Value *rightValue = right->codeGen(irBuilder, context);
-        if (action == Actions::Subtract) {
-            return irBuilder.CreateAdd(leftValue, rightValue, "addtmp");
-        }
-        // todo: other actions
-        else {
-            return nullptr;
-        }
-    }
+    class StringConstantNode : public ASTNode {
+    public:
+        explicit StringConstantNode(std::string content);
 
-    ASTNode::Actions BinaryOperatorNode::getAction() {
-        return action;
-    }
-} // AST
+        std::string content;
+
+        llvm::Value * codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
+    };
+}
+
+#endif //SESEROT_GEN0_STRINGCONSTANTNODE_H

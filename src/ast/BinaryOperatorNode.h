@@ -19,10 +19,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_BINARY_OPERATOR_NODE_H
 #define SESEROT_GEN0_BINARY_OPERATOR_NODE_H
 
-namespace Seserot::AST {
+#include "ASTNode.h"
 
-    class BinaryOperatorNode {
+namespace Seserot::AST{
 
+    class BinaryOperatorNode : public ASTNode {
+    public:
+        ASTNode *left;
+        ASTNode *right;
+        Actions action;
+
+        llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
+
+        Actions getAction() override;
     };
 
 } // AST

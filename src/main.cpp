@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "utils/ByteOrder.h"
 #include "generated/version.h"
 #include "test/tester.h"
+#include "utils/common.h"
 
 std::optional<int> build(const std::filesystem::path &path) {
     std::filesystem::directory_iterator iterator(path);
@@ -39,22 +40,25 @@ std::optional<int> build(const std::filesystem::path &path) {
     return 0;
 }
 
-int main(int _argc, char **_argv) {
+int main(int _argc, char **_argv, char **_envp) {
     static_assert(
             getEndianOrder() != hl_endianness::HL_PDP_ENDIAN &&
             getEndianOrder() != hl_endianness::HL_UNKNOWN_ENDIAN);
-    static_assert(sizeof(size_t) == 8);
-    static_assert(sizeof(short) == 2);
-    static_assert(sizeof(int) == 4);
-    static_assert(sizeof(long) == 8);
-    static_assert(sizeof(char) == 1);
-
+    static_assert(sizeof(Seserot::int8) == 1);
+    static_assert(sizeof(Seserot::int16) == 2);
+    static_assert(sizeof(Seserot::int32) == 4);
+    static_assert(sizeof(Seserot::int64) == 8);
 
     llvm::LLVMContext thisContext;
     llvm::IRBuilder<> Builder(thisContext);
     std::unique_ptr<llvm::Module> thisModule;
     std::map<std::string, llvm::Value *> NamedValues;
     std::vector<std::string> args;
+    std::vector<std::string> env;
+    while (*_envp != nullptr) {
+        env.emplace_back(*_envp);
+        _envp++;
+    }
     std::cout << "Welcome to Seserot!\nThis program is free software under the GNU General Public License.\n";
     for (int i = 1; i < _argc; ++i) {
         args.emplace_back(_argv[i]);
@@ -77,8 +81,7 @@ Options:
 )";
         }
         else if (c == "-v" || c == "--version") {
-            std::cout << "Seserot " << SESEROT_VERSION_MAJOR << "." << SESEROT_VERSION_MINOR << "." <<
-                      SESEROT_VERSION_PATCH << "\n";
+            std::cout << "Seserot " SESEROT_VERSION << "\n";
         }
         else if (c == "--about") {
             std::cout << R"(

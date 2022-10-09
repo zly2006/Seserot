@@ -32,5 +32,15 @@ namespace Seserot::utils {
         }
         return result;
     }
+    template<class T>
+    class return_type {
+    public:
+        using type = void;
+    };
+    template<class T, class ...P>
+    class return_type<T(P...)> {
+    public:
+        using type = T;
+    };
 } // namespace Seserot::utils
 #endif //SESEROT_GEN0_COMMON_H

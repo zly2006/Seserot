@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#ifndef SESEROT_FLOATING_CONSTANT_NODE_H
-#define SESEROT_FLOATING_CONSTANT_NODE_H
+#ifndef SESEROT_INTEGER_CONSTANT_NODE_H
+#define SESEROT_INTEGER_CONSTANT_NODE_H
 
 #include "ASTNode.h"
 #include "../BasicStructures.h"

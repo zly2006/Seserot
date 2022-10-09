@@ -30,23 +30,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
+#include "../Symbol.h"
 
 namespace Seserot::AST {
-    class CodeGenerator {
-    public:
-        llvm::LLVMContext *context;
-        llvm::IRBuilder<> *irBuilder;
-
-        CodeGenerator() {
-            context = new llvm::LLVMContext;
-            irBuilder = new llvm::IRBuilder<>(*context);
-        }
-    };
-
     class ASTNode {
     public:
         enum Actions {
             Unknown,
+            NOOP,
             Add,
             Subtract,
             Multiple,
@@ -78,6 +69,8 @@ namespace Seserot::AST {
             Error,
         };
 
+        TraitSymbol *inferredType;
+
         virtual llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) = 0;
 
         virtual ~ASTNode() = default;
@@ -85,10 +78,7 @@ namespace Seserot::AST {
         virtual Actions getAction() {
             return ASTNode::Unknown;
         }
-
-        ASTNode() = default;
     };
-
 } // Seserot
 
 #endif

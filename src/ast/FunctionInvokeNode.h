@@ -16,22 +16,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "BinaryOperatorNode.h"
+#ifndef SESEROT_GEN0_FUNCTIONINVOKENODE_H
+#define SESEROT_GEN0_FUNCTIONINVOKENODE_H
 
-namespace Seserot::AST {
-    llvm::Value *BinaryOperatorNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
-        llvm::Value *leftValue = left->codeGen(irBuilder, context);
-        llvm::Value *rightValue = right->codeGen(irBuilder, context);
-        if (action == Actions::Subtract) {
-            return irBuilder.CreateAdd(leftValue, rightValue, "addtmp");
-        }
-        // todo: other actions
-        else {
-            return nullptr;
-        }
-    }
+#include "ASTNode.h"
+#include "../Symbol.h"
+namespace Seserot::AST{
 
-    ASTNode::Actions BinaryOperatorNode::getAction() {
-        return action;
-    }
-} // AST
+    /**
+     * 表示函数调用<br/>
+     * 不需要设置inferredType
+     */
+    class FunctionInvokeNode : public ASTNode {
+    public:
+        MethodSymbol *methodSymbol;
+
+        std::string name;
+        std::vector<ASTNode *> args;
+
+        explicit FunctionInvokeNode(MethodSymbol *methodSymbol);
+
+        Actions getAction() override;
+
+        llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
+    };
+
+}
+#endif //SESEROT_GEN0_FUNCTIONINVOKENODE_H
