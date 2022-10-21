@@ -55,6 +55,7 @@ bool test(const std::string &what) {
         myGenericArg.modifiers = Modifiers::Vararg;
         methodSymbol.args.push_back(myGenericArg);
         TEST(methodSymbol.match({&newClass, &newClass, buildIn.numberTrait, buildIn.stringClass}) == expected)
+        TEST((std::is_same<bool, bool>::value))
         return true;
     }
     else if (what == "hello-world") {

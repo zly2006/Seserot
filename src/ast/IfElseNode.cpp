@@ -24,19 +24,22 @@ namespace Seserot {
         if (!cond) {
             return nullptr;
         }
+        // compare condition with 0 to get a boolean value
         cond = irBuilder.CreateICmpNE(cond, llvm::ConstantInt::get(context, llvm::APInt(1, 0, true)), "ifcond");
         llvm::Function *func = irBuilder.GetInsertBlock()->getParent();
         llvm::BasicBlock *thenBlock = llvm::BasicBlock::Create(context, "then", func);
         llvm::BasicBlock *elseBlock = llvm::BasicBlock::Create(context, "else");
         llvm::BasicBlock *mergeBlock = llvm::BasicBlock::Create(context, "ifcont");
         irBuilder.CreateCondBr(cond, thenBlock, elseBlock);
+
         irBuilder.SetInsertPoint(thenBlock);
         llvm::Value *thenVal = this->thenBlock->codeGen(irBuilder, context);
         if (!thenVal) {
             return nullptr;
         }
         irBuilder.CreateBr(mergeBlock);
-        thenBlock = irBuilder.GetInsertBlock();
+        thenBlock = irBuilder.GetInsertBlock(); // update thenBlock for phi node
+
         func->getBasicBlockList().push_back(elseBlock);
         irBuilder.SetInsertPoint(elseBlock);
         llvm::Value *elseVal = this->elseBlock->codeGen(irBuilder, context);

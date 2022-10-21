@@ -29,13 +29,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "test/tester.h"
 #include "utils/common.h"
 
+Seserot::ErrorTable errorTable;
+
 std::optional<int> build(const std::filesystem::path &path) {
     std::filesystem::directory_iterator iterator(path);
     if (!iterator->exists()) {
         return {};
     }
     for (auto &item: iterator) {
-        std::filesystem::current_path();
+        if (item.is_directory()) {
+            // TODO: 递归
+            continue;
+        }
+        auto extension = item.path().extension();
+        if (extension != ".se") {
+            continue;
+        }
+        std::ifstream file(item.path());
+        if (!file.is_open()) {
+            std::cerr << "Failed to open file: " << item.path() << std::endl;
+            return 1;
+        }
+        std::string source((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+        Seserot::Lexer lexer(errorTable, source);
+        lexer.parse();
+        Seserot::Parser parser(lexer.tokens, errorTable);
+        parser.reset();
+        parser.scan();
     }
     return 0;
 }
