@@ -63,7 +63,7 @@ namespace Seserot {
 
         void generateFunctionIR(llvm::Function *symbol, Scope *definition);
 
-        llvm::Type *getLLVMType(TraitSymbol *traitSymbol);
+        llvm::Type *getLLVMType(TraitSymbol *traitSymbol) const;
 
         /*void processGeneric();
         void generateTypeVar();
@@ -97,6 +97,14 @@ namespace Seserot {
         static MethodSymbol *currentMethodSymbol(Symbol *);
 
         AST::ASTNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
+
+        AST::ASTNode *parseIf(token_iter &tokenIter);
+
+        AST::ASTNode *parseWhile(token_iter &tokenIter);
+
+        AST::ASTNode *parseFor(token_iter &tokenIter);
+
+        AST::ASTNode *parseBlock(token_iter &tokenIter);
 
         static AST::IntegerConstantNode *string2FitNumber(const std::string &str, size_t &ret, bool = false);
 

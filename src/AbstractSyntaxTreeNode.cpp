@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "AbstractSyntaxTreeNode.h"
 #include "Parser.h"
+#include <fstream>
 
 namespace Seserot {
     size_t AbstractSyntaxTreeNode::write(char *buffer) {

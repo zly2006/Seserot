@@ -20,9 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SESEROT_GEN0_SYMBOL_H
 
 #include <utility>
+#include <llvm/IR/Function.h>
 
 #include "BasicStructures.h"
+
 namespace Seserot {
+    class Parser;
     struct Symbol;
     struct ClassSymbol;
     struct TraitSymbol;
@@ -67,6 +70,7 @@ namespace Seserot {
             Namespace = 64,
         };
         std::string name;
+        std::string signature;
         Scope *scope;
         Symbol *father;
         Type type;
@@ -126,6 +130,9 @@ namespace Seserot {
     struct MethodSymbol : SymbolWithChildren {
         MethodSymbol(
                 Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
+                std::vector<VariableSymbol> args, TraitSymbol *returnType, const Seserot::Parser &parser);
+        MethodSymbol(
+                Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
                 std::vector<VariableSymbol> args, TraitSymbol *returnType);
 
         Modifiers modifiers;
@@ -134,7 +141,9 @@ namespace Seserot {
         TraitSymbol *returnType;
         size_t stackSize;
 
-        MethodSymbol *specialize(std::vector<ClassSymbol*>);
+        MethodSymbol *specialize(std::vector<ClassSymbol*>, const Seserot::Parser &parser);
+
+        [[nodiscard]] std::string toString() const;
 
         /**检查是否匹配，支持泛型和vararg
          * @param params 参数列表
@@ -147,6 +156,8 @@ namespace Seserot {
          * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
          */
         std::optional<std::vector<size_t>> match(std::vector<TraitSymbol*> classes);
+
+        llvm::Function *llvmFunction;
     };
 
     struct VariableSymbol : Symbol {

@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "Symbol.h"
-
+#include "Parser.h"
 #include <utility>
 
 bool Seserot::isPrivateModifier(Modifiers modifiers) {
@@ -91,14 +91,45 @@ Seserot::VariableSymbol::VariableSymbol(
         Seserot::TraitSymbol *returnType)
         : Symbol(scope, Variable, name, father), modifiers(modifiers), returnType(returnType) {}
 
+
 Seserot::MethodSymbol::MethodSymbol(
         Scope *scope, const std::string &name, Modifiers modifiers,
         std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args, TraitSymbol *returnType)
-        : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),
-          genericArgs(std::move(genericArgs)),
-          args(std::move(args)), stackSize(0), returnType(returnType) {}
+        : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),llvmFunction(nullptr),
+         genericArgs(std::move(genericArgs)),  args(std::move(args)), stackSize(0), returnType(returnType) {}
 
-Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol *> symbols) {
+Seserot::MethodSymbol::MethodSymbol(
+        Scope *scope, const std::string &name, Modifiers modifiers,
+        std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args, TraitSymbol *returnType,
+        const Parser &parser)
+        : SymbolWithChildren(scope, Method, name, nullptr), modifiers(modifiers),
+          args(std::move(args)), stackSize(0), returnType(returnType) {
+    if (genericArgs.empty()) {
+        //todo: generate llvm function
+        std::vector<llvm::Type *> args;
+        args.reserve(args.size());
+        for (const auto &item: this->args) {
+            if (item.modifiers & Vararg) {
+
+            }
+            else
+                args.push_back(parser.getLLVMType(item.returnType));
+        }
+
+        llvm::FunctionType *pFunctionType =
+                llvm::FunctionType::get(llvm::Type::getDoubleTy(*parser.thisContext), args, false);
+
+        llvmFunction = llvm::Function::Create(pFunctionType, llvm::Function::ExternalLinkage, name, *parser.thisModule);
+
+        unsigned Idx = 0;
+        for (auto &Arg: llvmFunction->args())
+            Arg.setName(this->args[Idx++].name);
+
+        this->genericArgs = std::move(genericArgs);
+    }
+}
+
+Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol *> symbols, const Parser &parser) {
     if (symbols.size() != genericArgs.size() || genericArgs.empty()) {
         throw std::invalid_argument("This function is not generic or generic args do not match.");
     }
@@ -109,7 +140,10 @@ Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol
         // the same as this
         return this;
     }
-    auto *pNew = new MethodSymbol(scope, name, modifiers, {}, args, nullptr);
+
+    std::vector<ClassSymbol> newGenericArgs;
+    std::vector<VariableSymbol> newArgs = args;
+    TraitSymbol *newReturnType = returnType;
     for (int i = 0; i < symbols.size(); ++i) {
         ClassSymbol *before;
         ClassSymbol *after;
@@ -118,19 +152,19 @@ Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol
             after = symbols[i];
         }
         else {
-            pNew->genericArgs.push_back(genericArgs[i]);
+            newGenericArgs.push_back(genericArgs[i]);
             before = &genericArgs[i];
-            after = &(pNew->genericArgs).back();
+            after = &newGenericArgs.back();
         }
         if (returnType == before) {
-            pNew->returnType = after;
+            newReturnType = after;
         }
-        for (auto &item: pNew->args) {
+        for (auto &item: newArgs) {
             if (item.returnType == before)
                 item.returnType = after;
         }
     }
-    return pNew;
+    return new MethodSymbol(scope, name, modifiers, newGenericArgs, newArgs, newReturnType, parser);
 }
 
 std::optional<std::vector<size_t>> Seserot::MethodSymbol::match

@@ -480,6 +480,12 @@ namespace Seserot {
         return 0;//todo
     }
 
+    /**
+     * 解析表达式
+     * @param tokenIter 最后为表达式内的最后一个token，需要手动++
+     * @param untilBracket 遇到这个括号停止eat，进入后续的解析
+     * @return
+     */
     AST::ASTNode *Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
         AST::ASTNode::Actions actions;
         std::vector<std::variant<AST::ASTNode *, std::string>> s;
@@ -568,7 +574,7 @@ namespace Seserot {
                             //todo: 分配错误码
                             errorTable.errors.emplace_back(tokenIter->start, 0, "The expression is not ended but "
                                                                                 "found a semicolon.");
-                            errorTable.interrupt();
+                            return nullptr;
                         }
                         success = true;
                         break;
@@ -910,7 +916,7 @@ namespace Seserot {
         return pFunction;
     }
 
-    llvm::Type *Parser::getLLVMType(TraitSymbol *traitSymbol) {
+    llvm::Type *Parser::getLLVMType(TraitSymbol *traitSymbol) const {
         std::map<TraitSymbol *, llvm::Type *> defaultType = {
                 {buildIn.doubleClass, llvm::Type::getDoubleTy(*thisContext)},
                 {buildIn.longClass,   llvm::Type::getInt64Ty(*thisContext)},
@@ -936,5 +942,101 @@ namespace Seserot {
 
     void Parser::importSymbols(const std::vector<std::string_view> &symbols) {
 
+    }
+
+    AST::ASTNode *Parser::parseIf(Parser::token_iter &tokenIter) {
+        if (tokenIter->content != "if" || tokenIter->type != Token::Name) {
+            return nullptr;
+        }
+        tokenIter++;
+        if (tokenIter == tokens.end()) {
+            //todo: 分配错误码
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            return nullptr;
+        }
+        bool hasBrackets =
+                tokenIter->content == "(" && tokenIter->type == Token::Operator;
+        AST::IfElseNode *node = new AST::IfElseNode();
+        node->condition = parseExpression(tokenIter);
+        if (node->condition == nullptr) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "Expected an expression.");
+            return nullptr;
+        }
+        if (tokenIter == tokens.end()) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            return nullptr;
+        }
+        tokenIter++;
+        if (tokenIter == tokens.end()) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            return nullptr;
+        }
+        bool hasBraces =
+                tokenIter->content == "{" && tokenIter->type == Token::Operator;
+        if (!hasBrackets && !hasBraces) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "Non-bracket if expected a '{'.");
+            return nullptr;
+        }
+        if (hasBraces) {
+            tokenIter++;
+            if (tokenIter == tokens.end()) {
+                errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+                return nullptr;
+            }
+            node->thenBlock = parseBlock(tokenIter);
+        }
+        else {
+            node->thenBlock = parseExpression(tokenIter);
+        }
+        if (node->thenBlock == nullptr) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "Expected an expression.");
+            return nullptr;
+        }
+        if (tokenIter == tokens.end()) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            return nullptr;
+        }
+        tokenIter++;
+        if (tokenIter == tokens.end()) {
+            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            return nullptr;
+        }
+        if (tokenIter->type == Token::Name && tokenIter->content == "else") {
+            tokenIter++;
+            if (tokenIter == tokens.end()) {
+                errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+                return nullptr;
+            }
+            if (tokenIter->content == "{" && tokenIter->type == Token::Operator) {
+                tokenIter++;
+                if (tokenIter == tokens.end()) {
+                    errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+                    return nullptr;
+                }
+                node->elseBlock = parseBlock(tokenIter);
+            }
+            else {
+                node->elseBlock = parseExpression(tokenIter);
+            }
+            if (node->elseBlock == nullptr) {
+                errorTable.errors.emplace_back(tokenIter->stop, 0, "Expected an expression.");
+                return nullptr;
+            }
+        }
+
+        return node;
+    }
+
+    AST::ASTNode *Parser::parseFor(Parser::token_iter &tokenIter) {
+
+        return nullptr;
+    }
+
+    AST::ASTNode *Parser::parseWhile(Parser::token_iter &tokenIter) {
+        return nullptr;
+    }
+
+    AST::ASTNode *Parser::parseBlock(Parser::token_iter &tokenIter) {
+        return nullptr;
     }
 } // Seserot
