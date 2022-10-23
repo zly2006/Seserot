@@ -26,22 +26,49 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string_view>
 #include "Symbol.h"
 
+
 namespace Seserot {
+    class SymbolTable;
+
+    extern SymbolTable builtinTable;
+
     class SymbolTable {
     private:
-        // Global or builtin symbols, cached for fast lookup.
-        // Note: entries in this map are available in all scopes.
-        std::unordered_map<std::string, Symbol *> quickLookup;
         Scope *root;
     public:
-        std::map<std::string, std::unique_ptr<Symbol>> symbols;
-        std::vector<SymbolTable *> importedTables;
+        /**
+         * @brief Construct a new Symbol Table object. If root is not nullptr,
+         * ths created table will import builtin symbols.
+         */
+        explicit SymbolTable(Scope *root = nullptr);
 
-        explicit SymbolTable(Scope *root, bool = false);
+        std::map<std::string, std::unique_ptr<Symbol>> symbols;
+
+        std::vector<SymbolTable *> importedTables;
 
         std::vector<Symbol *> lookup(std::string_view name);
 
-        std::vector<Symbol *> lookup(std::string_view name, Symbol *scope);
+        std::vector<Symbol *> lookup(std::string_view name, Scope *scope);
+
+        bool emplace(std::unique_ptr<Symbol> symbol);
+
+        static TraitSymbol *Number;
+        static ClassSymbol *String;
+        static ClassSymbol *Void;
+        static ClassSymbol *Int;
+        static ClassSymbol *Long;
+        static ClassSymbol *Short;
+        static ClassSymbol *Float;
+        static ClassSymbol *Double;
+        static ClassSymbol *Char;
+        static ClassSymbol *Boolean;
+        static ClassSymbol *Byte;
+        static ClassSymbol *Object;
+        static ClassSymbol *Array;
+        static ClassSymbol *Trait;
+        static ClassSymbol *Class;
+        static ClassSymbol *Enum;
+        static ClassSymbol *Function;
     };
 } // Seserot
 

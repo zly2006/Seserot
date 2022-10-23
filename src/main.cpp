@@ -55,7 +55,6 @@ std::optional<int> build(const std::filesystem::path &path) {
         Seserot::Lexer lexer(errorTable, source);
         lexer.parse();
         Seserot::Parser parser(lexer.tokens, errorTable);
-        parser.reset();
         parser.scan();
     }
     return 0;

@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ErrorTable.h"
 #include "Symbol.h"
 #include "BuildIn.h"
+#include "SymbolTable.h"
 #include <map>
 #include <unordered_map>
 #include <set>
@@ -51,8 +52,6 @@ namespace Seserot {
 
         void parse();
 
-        void reset();
-
         void scan();
 
         size_t generateStack(MethodSymbol *);
@@ -70,18 +69,13 @@ namespace Seserot {
         void parseFunctionAST();*/
         Modifiers parseModifiers(std::vector<Token>::iterator it, Modifiers = None);
 
-        BuildIn buildIn;
+        SymbolTable symbolTable = SymbolTable(&root);
         ErrorTable &errorTable;
         FileScope root;
         std::vector<Token> tokens;
-        std::map<std::string, NamespaceSymbol *> namespaces;
-        std::map<std::string, ClassSymbol *> classes;
-        std::multimap<std::string, Symbol *> methods;
-        std::vector<VariableSymbol *> variables;
-        std::vector<PropertySymbol *> properties;
-        llvm::LLVMContext *thisContext{};
-        llvm::IRBuilder<> *irBuilder{};
-        llvm::Module *thisModule{};
+        llvm::LLVMContext *thisContext = nullptr;
+        llvm::IRBuilder<> *irBuilder = nullptr;
+        llvm::Module *thisModule = nullptr;
 
         void setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module);
 
@@ -90,11 +84,11 @@ namespace Seserot {
 
         Token &read(size_t &);
 
-        std::vector<Symbol *> searchSymbol(Symbol::Type, const std::string &, Scope *);
-
         static ClassSymbol *currentClassSymbol(Symbol *);
 
         static MethodSymbol *currentMethodSymbol(Symbol *);
+
+        static NamespaceSymbol *currentNamespaceSymbol(Symbol *);
 
         AST::ASTNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
 

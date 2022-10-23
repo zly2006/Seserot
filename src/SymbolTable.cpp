@@ -19,16 +19,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "SymbolTable.h"
 
 namespace Seserot {
-    SymbolTable::SymbolTable(Scope *root, bool buildDefault) : root(root) {
-        symbols.emplace("::.Number", std::make_unique<TraitSymbol>(
+
+    TraitSymbol *SymbolTable::Number = nullptr;
+    ClassSymbol *SymbolTable::String = nullptr;
+    ClassSymbol *SymbolTable::Void = nullptr;
+    ClassSymbol *SymbolTable::Int = nullptr;
+    ClassSymbol *SymbolTable::Long = nullptr;
+    ClassSymbol *SymbolTable::Short = nullptr;
+    ClassSymbol *SymbolTable::Float = nullptr;
+    ClassSymbol *SymbolTable::Double = nullptr;
+    ClassSymbol *SymbolTable::Char = nullptr;
+    ClassSymbol *SymbolTable::Boolean = nullptr;
+    ClassSymbol *SymbolTable::Byte = nullptr;
+    ClassSymbol *SymbolTable::Object = nullptr;
+    ClassSymbol *SymbolTable::Array = nullptr;
+    ClassSymbol *SymbolTable::Trait = nullptr;
+    ClassSymbol *SymbolTable::Class = nullptr;
+    ClassSymbol *SymbolTable::Enum = nullptr;
+    ClassSymbol *SymbolTable::Function = nullptr;
+
+    SymbolTable builtinTable;
+
+    void initBuiltinTable() {
+        builtinTable.importedTables.clear();
+#pragma region Basuc types
+        builtinTable.symbols.emplace("C::.Number;", std::make_unique<TraitSymbol>(
                 nullptr,
                 "Number",
                 (Modifiers) (Static | ValueType),
                 std::vector<ClassSymbol>(),
                 std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.Number", symbols["::.Number"].get());
-        symbols.emplace("::.String", std::make_unique<ClassSymbol>(
+        SymbolTable::Number = dynamic_cast<TraitSymbol *>(builtinTable.symbols["C::.Number"].get());
+        builtinTable.symbols.emplace("C::.String;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "String",
                 std::vector<ClassSymbol>(),
@@ -36,8 +59,8 @@ namespace Seserot {
                 Static,
                 std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.String", symbols["::.String"].get());
-        symbols.emplace("::.Void", std::make_unique<ClassSymbol>(
+        SymbolTable::String = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.String"].get());
+        builtinTable.symbols.emplace("C::.Void;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Void",
                 std::vector<ClassSymbol>(),
@@ -45,89 +68,109 @@ namespace Seserot {
                 (Modifiers) (Static | Final),
                 std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.Void", symbols["::.Void"].get());
-        symbols.emplace("::.Int", std::make_unique<ClassSymbol>(
+        SymbolTable::Void = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Void"].get());
+        builtinTable.symbols.emplace("C::.Int;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Int",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{(TraitSymbol *) symbols["::.Number"].get()}
+                std::vector<TraitSymbol *>{SymbolTable::Number}
         ));
-        quickLookup.emplace("::.Int", symbols["::.Int"].get());
-        symbols.emplace("::.Long", std::make_unique<ClassSymbol>(
+        SymbolTable::Int = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Int"].get());
+        builtinTable.symbols.emplace("C::.Long;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Long",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{(TraitSymbol *) symbols["::.Number"].get()}
+                std::vector<TraitSymbol *>{SymbolTable::Number}
         ));
-        quickLookup.emplace("::.Long", symbols["::.Long"].get());
-        symbols.emplace("::.Float", std::make_unique<ClassSymbol>(
+        SymbolTable::Long = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Long"].get());
+        builtinTable.symbols.emplace("C::.Short;", std::make_unique<ClassSymbol>(
+                nullptr,
+                "Short",
+                std::vector<ClassSymbol>(),
+                nullptr,
+                (Modifiers) (Static | ValueType),
+                std::vector<TraitSymbol *>{SymbolTable::Number}
+        ));
+        SymbolTable::Short = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Short"].get());
+        builtinTable.symbols.emplace("C::.Float;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Float",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{(TraitSymbol *) symbols["::.Number"].get()}
+                std::vector<TraitSymbol *>{SymbolTable::Number}
         ));
-        quickLookup.emplace("::.Float", symbols["::.Float"].get());
-        symbols.emplace("::.Double", std::make_unique<ClassSymbol>(
+        SymbolTable::Float = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Float"].get());
+        builtinTable.symbols.emplace("C::.Double;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Double",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{(TraitSymbol *) symbols["::.Number"].get()}
+                std::vector<TraitSymbol *>{SymbolTable::Number}
         ));
-        quickLookup.emplace("::.Double", symbols["::.Double"].get());
-        symbols.emplace("::.Bool", std::make_unique<ClassSymbol>(
+        SymbolTable::Double = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Double"].get());
+        builtinTable.symbols.emplace("C::.Boolean;", std::make_unique<ClassSymbol>(
                 nullptr,
-                "Bool",
+                "Boolean",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{(TraitSymbol *) symbols["::.Number"].get()}
+                std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.Bool", symbols["::.Bool"].get());
-        symbols.emplace("::.Char", std::make_unique<ClassSymbol>(
+        SymbolTable::Boolean = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Boolean"].get());
+        builtinTable.symbols.emplace("C::.Char;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Char",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{}
+                std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.Char", symbols["::.Char"].get());
-        symbols.emplace("::.Array", std::make_unique<ClassSymbol>(
+        SymbolTable::Char = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Char"].get());
+        builtinTable.symbols.emplace("C::.Byte;", std::make_unique<ClassSymbol>(
+                nullptr,
+                "Byte",
+                std::vector<ClassSymbol>(),
+                nullptr,
+                (Modifiers) (Static | ValueType),
+                std::vector<TraitSymbol *>()
+        ));
+        SymbolTable::Byte = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Byte"].get());
+        builtinTable.symbols.emplace("C::.Array;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Array",
                 std::vector<ClassSymbol>(),
                 nullptr,
-                (Modifiers) (Static | ValueType),
-                std::vector<TraitSymbol *>{}
+                (Modifiers) (None),
+                std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.Array", symbols["::.Array"].get());
-        symbols.emplace("::.Trait", std::make_unique<ClassSymbol>(
+        SymbolTable::Array = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Array"].get());
+#pragma endregion
+#pragma region Reflection
+        builtinTable.symbols.emplace("C::.Trait", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Trait",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | Final),
-                std::vector<TraitSymbol *>{}
+                std::vector<TraitSymbol *>()
         ));
-        quickLookup.emplace("::.Trait", symbols["::.Trait"].get());
-        symbols.emplace("::.Class", std::make_unique<ClassSymbol>(
+        SymbolTable::Trait = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Trait"].get());
+        builtinTable.symbols.emplace("C::.Trait", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Class",
                 std::vector<ClassSymbol>(),
                 nullptr,
                 (Modifiers) (Static | Final),
-                std::vector<TraitSymbol *>{((ClassSymbol *) symbols["::.Trait"].get())}
+                std::vector<TraitSymbol *>{SymbolTable::Trait}
         ));
-        quickLookup.emplace("::.Class", symbols["::.Class"].get());
-        symbols.emplace("::.Function", std::make_unique<ClassSymbol>(
+        SymbolTable::Class = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Class"].get());
+        builtinTable.symbols.emplace("C::.Function", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Function",
                 std::vector<ClassSymbol>{
@@ -139,16 +182,52 @@ namespace Seserot {
                 (Modifiers) (Static | Final),
                 std::vector<TraitSymbol *>{}
         ));
-        quickLookup.emplace("::.Function", symbols["::.Function"].get());
+        SymbolTable::Function = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Function"].get());
+#pragma endregion
+    }
+
+    SymbolTable::SymbolTable(Scope *root) : root(root) {
+        if (root) {
+            if (!Number) {
+                initBuiltinTable();
+            }
+            importedTables.push_back(&builtinTable);
+        }
     }
 
     std::vector<Symbol *> SymbolTable::lookup(std::string_view name) {
         std::vector<Symbol *> result;
-
-        return std::vector<Symbol *>();
+        for (const auto &item: symbols) {
+            if (item.second->scope == nullptr || item.second->scope == root) {
+                if (item.second->name == name) {
+                    result.push_back(item.second.get());
+                }
+            }
+        }
+        for (const auto &item: importedTables) {
+            auto temp = item->lookup(name);
+            result.insert(result.end(), temp.begin(), temp.end());
+        }
+        return result;
     }
 
-    std::vector<Symbol *> SymbolTable::lookup(std::string_view name, Symbol *scope) {
-        return std::vector<Symbol *>();
+    std::vector<Symbol *> SymbolTable::lookup(std::string_view name, Scope *scope) {
+        std::vector<Symbol *> result = lookup(name);
+        for (const auto &item: symbols) {
+            if (scope->inside(item.second->scope)) {
+                if (item.second->name == name) {
+                    result.push_back(item.second.get());
+                }
+            }
+        }
+        return result;
+    }
+
+    bool SymbolTable::emplace(std::unique_ptr<Symbol> symbol) {
+        if (symbols.count(symbol->signature)) {
+            return false;
+        }
+        symbols.emplace(symbol->signature, std::move(symbol));
+        return true;
     }
 } // Seserot

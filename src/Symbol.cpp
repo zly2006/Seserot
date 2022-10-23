@@ -255,6 +255,10 @@ std::optional<std::vector<size_t>> Seserot::MethodSymbol::match(std::vector<Trai
 Seserot::NamespaceSymbol::NamespaceSymbol(Seserot::Scope *scope, const std::string &name)
         : SymbolWithChildren(scope, Namespace, name, nullptr) {}
 
+bool Seserot::NamespaceSymbol::operator==(const Seserot::NamespaceSymbol &rhs) const {
+    return name == rhs.name;
+}
+
 Seserot::SymbolWithChildren::SymbolWithChildren(
         Seserot::Scope *scope, Seserot::Symbol::Type type, const std::string &name, Seserot::Scope *childScope)
         : Symbol(scope, type, name, nullptr), childScope(childScope) {}
