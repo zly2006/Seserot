@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ast/FloatingConstantNode.h"
 #include "ast/StringConstantNode.h"
 #include "ast/BinaryOperatorNode.h"
-
+#include "SymbolTable.h"
 
 #include <utility>
 #include <stack>
@@ -41,43 +41,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 
 namespace Seserot {
-    void Parser::reset() {
-        for (const auto &item: namespaces) {
-            delete item.second;
-        }
-        for (const auto &item: classes) {
-            delete item.second;
-        }
-        for (const auto &item: methods) {
-            delete item.second;
-        }
-        for (const auto &item: variables) {
-            delete item;
-        }
-        for (const auto &item: properties) {
-            delete item;
-        }
-        namespaces.clear();
-        classes.clear();
-        methods.clear();
-        auto loadClass = [&](ClassSymbol *p) {
-            classes.emplace(p->name, p);
-        };
-        for (auto &item: root.children) {
-            delete item;
-        }
-        loadClass(buildIn.voidClass);
-        loadClass(buildIn.doubleClass);
-        loadClass(buildIn.intClass);
-        loadClass(buildIn.floatClass);
-        loadClass(buildIn.longClass);
-        loadClass(buildIn.functionClass);
-    }
-
     void Parser::scan() {
         Scope *currentScope = &root;
-        SymbolWithChildren *rootNamespace = new NamespaceSymbol(currentScope, "<root>");
-        namespaces.emplace("", (NamespaceSymbol *) rootNamespace);
+        auto *rootNamespace = new NamespaceSymbol(currentScope, "<root>");
+        symbolTable.emplace(std::unique_ptr<NamespaceSymbol>(rootNamespace));
         std::stack<SymbolWithChildren *> currentFatherSymbol;
         currentFatherSymbol.emplace(rootNamespace);
         // init finish
@@ -128,9 +95,8 @@ namespace Seserot {
                         name = currentFatherSymbol.top()->name + "." + name;
                     }
                     auto *ns = new NamespaceSymbol(currentScope, name);
-                    if (!namespaces.contains(name)) {
-                        namespaces.emplace(name, ns);
-                    }
+                    ns->signature = name;
+                    symbolTable.emplace(std::unique_ptr<NamespaceSymbol>(ns));
                     if (tokens[i].content == "{" && tokens[i].type == Token::Operator) {
                         newScope(tokens[i]);
                         ns->childScope = currentScope;
@@ -152,16 +118,16 @@ namespace Seserot {
                     }
                     i++;
                     std::string name = tokens[i].content;
-                    if (classes.count(name) && !(mod & Partial)) {
+                    auto *symbol = new ClassSymbol(currentScope, name, {}, nullptr, mod, {});
+                    if (auto *pf = currentNamespaceSymbol(currentFatherSymbol.top()); pf != nullptr) {
+                        symbol->signature = pf->signature + "::" + name;
+                    }
+                    else {
+                        symbol->signature = "::" + name;
+                    }
+                    if (!symbolTable.emplace(std::unique_ptr<ClassSymbol>(symbol))) {
                         errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
                         errorTable.interrupt("scanning classes");
-                    }
-                    ClassSymbol *symbol;
-                    if (classes.contains(name))
-                        symbol = classes[name];
-                    else {
-                        symbol = new ClassSymbol(currentScope, name, {}, nullptr, None, {});
-                        classes.emplace(name, symbol);
                     }
                     while (true) {
                         i++;//todo
@@ -183,10 +149,6 @@ namespace Seserot {
                     std::string name = tokens[i].content;
                     if (currentFatherSymbol.top() != rootNamespace) {
                         currentFatherSymbol.top()->name + "." + name;
-                    }
-                    if (methods.count(name)) {
-                        errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
-                        errorTable.interrupt("scanning methods");
                     }
                     auto *methodSymbol = new MethodSymbol(nullptr, name, mod,
                                                           {}, {}, nullptr);
@@ -228,7 +190,10 @@ namespace Seserot {
                         }
                     }
 
-                    methods.emplace(name, methodSymbol);
+                    if (!symbolTable.emplace(std::unique_ptr<MethodSymbol>(methodSymbol))) {
+                        errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
+                        errorTable.interrupt("scanning methods");
+                    }
                 }
                 else if (tokens[i].content == "var" || tokens[i].content == "val") {
                     auto mod = parseModifiers(tokens.begin() + (long) i,
@@ -243,9 +208,8 @@ namespace Seserot {
                         }
                     } // val
                     if (methodSymbol != nullptr) {
-                        auto symbols = searchSymbol(Symbol::Variable, t.content, currentScope);
-
-                        if (!symbols.empty()) {
+                        auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod, nullptr);
+                        if (!symbolTable.emplace(std::unique_ptr<VariableSymbol>(pItem))) {
                             //todo: 分配错误码
                             std::string msg;
                             msg += "variable ";
@@ -253,12 +217,12 @@ namespace Seserot {
                             msg += " already exists.";
                             errorTable.errors.emplace_back(t.start, 0, msg.c_str());
                         }
-                        auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod, nullptr);
-                        variables.push_back(pItem);
                     }
                     else if (classSymbol == currentFatherSymbol.top()) {
                         auto *pItem = new PropertySymbol(currentScope, t.content, classSymbol, mod);
-                        properties.push_back(pItem);
+                        if (!symbolTable.emplace(std::unique_ptr<PropertySymbol>(pItem))) {
+
+                        }
                     }
                     else {
                         //todo: 分配错误码
@@ -416,7 +380,6 @@ namespace Seserot {
      * 正常的parser流程的啦
      */
     void Parser::parse() {
-        reset();
         scan();
         std::vector<std::string_view> imports;
         for (auto it = tokens.begin(); it != tokens.end(); ++it) {
@@ -449,27 +412,6 @@ namespace Seserot {
         return (MethodSymbol *) symbol;
     }
 
-    std::vector<Symbol *> Parser::searchSymbol(typename Symbol::Type type, const std::string &name, Scope *scope) {
-        assert(scope != nullptr);
-        assert(!name.empty());
-        std::vector<Symbol *> ret;
-        if (type & Symbol::Class) {
-            for (const auto &item: classes) {
-                if (item.first == name && scope->inside(item.second->scope)) {
-                    ret.push_back(item.second);
-                }
-            }
-        }
-        if (type & Symbol::Variable) {
-            for (const auto &item: variables) {
-                if (item->name == name && scope->inside(item->scope)) {
-                    ret.push_back(item);
-                }
-            }
-        }
-        return ret;
-    }
-
     [[deprecated("llvm can solve this problem")]] size_t Parser::generateStack(MethodSymbol *methodSymbol) {
         if (!methodSymbol->genericArgs.empty()) {
             return 0;
@@ -480,6 +422,8 @@ namespace Seserot {
         return 0;//todo
     }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-no-recursion"
     /**
      * 解析表达式
      * @param tokenIter 最后为表达式内的最后一个token，需要手动++
@@ -611,21 +555,15 @@ namespace Seserot {
                     break;
                 }
                 case Token::Name: {
-                    if ( tokenIter + 1 != tokens.end() && (tokenIter + 1)->type == Token::Operator &&
-                         (tokenIter + 1)->content == "(") {
+                    if (tokenIter + 1 != tokens.end() && (tokenIter + 1)->type == Token::Operator &&
+                        (tokenIter + 1)->content == "(") {
                         // function
                         // this field's purpose is to identify which function should be called.
                         //todo: 这里已经要进行重载决策了
                         // 同时，之前的类型推断
                         MethodSymbol *methodSymbol = nullptr;
-                        for (const auto &item: methods) {
-                            auto *method = (MethodSymbol*)item.second;
-                            if (method->name == tokenIter->content) {
-                                if (method->match({})) {
-                                    //todo: 重载决策
-                                }
-                            }
-                        }
+                        //todo: 重载决策
+                        symbolTable.lookup(tokenIter->content, token2scope[&*tokenIter]);
                         if (!methodSymbol) {
                             //todo: 分配错误码
                             errorTable.errors.emplace_back(tokenIter->start, 0, "No such function.");
@@ -744,7 +682,7 @@ namespace Seserot {
             errorTable.interrupt();
         }
 
-        for (const auto & set : priority) {
+        for (const auto &set: priority) {
             for (auto it = s.begin(); it != s.end(); it++) {
                 if (it->index() == 1) {
                     AST::ASTNode::Actions action = actionMap.at(std::get<std::string>(*it));
@@ -791,6 +729,7 @@ namespace Seserot {
         }
         return nullptr;
     }
+#pragma clang diagnostic pop
 
     template<class T>
     std::optional<T> Parser::convertToNumber(const std::string &str) {
@@ -804,6 +743,7 @@ namespace Seserot {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "Simplify"
 #pragma ide diagnostic ignored "UnreachableCode"
+
     /**
      * 将包含正数的字符串转为数字并检查溢出
      * @param str 正数，不含非数字字符
@@ -918,10 +858,10 @@ namespace Seserot {
 
     llvm::Type *Parser::getLLVMType(TraitSymbol *traitSymbol) const {
         std::map<TraitSymbol *, llvm::Type *> defaultType = {
-                {buildIn.doubleClass, llvm::Type::getDoubleTy(*thisContext)},
-                {buildIn.longClass,   llvm::Type::getInt64Ty(*thisContext)},
-                {buildIn.intClass,    llvm::Type::getInt32Ty(*thisContext)},
-                {buildIn.stringClass, llvm::Type::getInt16PtrTy(*thisContext)},
+                {SymbolTable::Double, llvm::Type::getDoubleTy(*thisContext)},
+                {SymbolTable::Long,   llvm::Type::getInt64Ty(*thisContext)},
+                {SymbolTable::Int,    llvm::Type::getInt32Ty(*thisContext)},
+                {SymbolTable::Long,   llvm::Type::getInt16PtrTy(*thisContext)},
                 // todo: build in当时是什么屎山啊……
         };
         if (defaultType.contains(traitSymbol)) return defaultType[traitSymbol];
@@ -1038,5 +978,12 @@ namespace Seserot {
 
     AST::ASTNode *Parser::parseBlock(Parser::token_iter &tokenIter) {
         return nullptr;
+    }
+
+    NamespaceSymbol *Parser::currentNamespaceSymbol(Symbol *symbol) {
+        while (symbol != nullptr && symbol->type != Symbol::Method) {
+            symbol = symbol->father;
+        }
+        return (NamespaceSymbol *) symbol;
     }
 } // Seserot

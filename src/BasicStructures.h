@@ -109,13 +109,24 @@ namespace Seserot {
 
         Scope *newChildren(SourcePosition _start, SourcePosition _stop) {
             auto *p = new Scope(this, std::move(_start), std::move(_stop));
+            p->id = children.size();
             children.push_back(p);
             return p;
         }
 
+        [[nodiscard]] std::string getSignature() const { // NOLINT(misc-no-recursion)
+            assert(father != this);
+            if (father != nullptr) {
+                return father->getSignature() + "$" + std::to_string(id);
+            }
+            else {
+                return std::to_string(id);
+            }
+        };
+
         Scope *father = nullptr;
         std::vector<Scope *> children;
-        char *tag = nullptr;
+        size_t id;
         SourcePosition start, stop;
 
 

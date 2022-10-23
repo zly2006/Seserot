@@ -41,7 +41,7 @@ namespace Seserot {
         Operator = 16,
         ValueType = 32,
         Readonly = 64,
-        Partial = 128,
+        __ = 128,
         Mutable = 256,
         PrivateProtected = 512,
         PrivateInternal = 1024,
@@ -89,12 +89,15 @@ namespace Seserot {
                 Scope *childScope);
 
         Scope *childScope;
+        std::vector<Symbol *> children;
     };
 
     struct NamespaceSymbol : SymbolWithChildren {
         NamespaceSymbol(
                 Scope *scope,
                 const std::string &name);
+
+        bool operator==(const NamespaceSymbol &rhs) const;
     };
 
     struct TraitSymbol : SymbolWithChildren {

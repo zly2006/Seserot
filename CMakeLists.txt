@@ -37,7 +37,10 @@ add_executable(Seserot
         src/ast/IntegerConstantNode.cpp
         src/ast/BinaryOperatorNode.cpp
         src/ast/UnaryOperatorNode.cpp src/test/tester.cpp
-        src/test/tester.h src/ast/IfElseNode.cpp src/ast/IfElseNode.h src/ast/FunctionInvokeNode.cpp src/ast/FunctionInvokeNode.h src/ast/StringConstantNode.cpp src/ast/StringConstantNode.h src/SymbolTable.cpp src/SymbolTable.h)
+        src/test/tester.h src/ast/IfElseNode.cpp
+        src/ast/FunctionInvokeNode.cpp
+        src/ast/StringConstantNode.cpp
+        src/SymbolTable.cpp)
 
 target_include_directories(Seserot PUBLIC "${PROJECT_BINARY_DIR}")
 
