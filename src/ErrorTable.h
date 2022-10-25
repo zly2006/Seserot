@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace Seserot {
     class ErrorTable {
     public:
-        std::vector<CompilerError> errors{};
+        std::vector<std::unique_ptr<CompilerError>> errors{};
 
         void interrupt(const std::string & = "");
     };

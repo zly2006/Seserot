@@ -28,19 +28,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 namespace Seserot {
-    class SymbolTable;
-
-    extern SymbolTable builtinTable;
-
     class SymbolTable {
     private:
         Scope *root;
+
+        NamespaceSymbol *currentNamespace;
     public:
         /**
          * @brief Construct a new Symbol Table object. If root is not nullptr,
          * ths created table will import builtin symbols.
          */
-        explicit SymbolTable(Scope *root = nullptr);
+        explicit SymbolTable(Scope *root = nullptr, NamespaceSymbol *namespaceSymbol = nullptr);
 
         std::map<std::string, std::unique_ptr<Symbol>> symbols;
 
@@ -51,25 +49,34 @@ namespace Seserot {
         std::vector<Symbol *> lookup(std::string_view name, Scope *scope);
 
         bool emplace(std::unique_ptr<Symbol> symbol);
-
-        static TraitSymbol *Number;
-        static ClassSymbol *String;
-        static ClassSymbol *Void;
-        static ClassSymbol *Int;
-        static ClassSymbol *Long;
-        static ClassSymbol *Short;
-        static ClassSymbol *Float;
-        static ClassSymbol *Double;
-        static ClassSymbol *Char;
-        static ClassSymbol *Boolean;
-        static ClassSymbol *Byte;
-        static ClassSymbol *Object;
-        static ClassSymbol *Array;
-        static ClassSymbol *Trait;
-        static ClassSymbol *Class;
-        static ClassSymbol *Enum;
-        static ClassSymbol *Function;
     };
+
+    SymbolTable &getSymbolTable(const std::string &name);
+
+    TraitSymbol *getCommonBaseClass(TraitSymbol *a, TraitSymbol *b);
+
+    namespace BuiltinSymbols {
+        void init();
+
+        extern SymbolTable builtinTable;
+        extern TraitSymbol *Number;
+        extern ClassSymbol *String;
+        extern ClassSymbol *Void;
+        extern ClassSymbol *Int;
+        extern ClassSymbol *Long;
+        extern ClassSymbol *Short;
+        extern ClassSymbol *Float;
+        extern ClassSymbol *Double;
+        extern ClassSymbol *Char;
+        extern ClassSymbol *Boolean;
+        extern ClassSymbol *Byte;
+        extern ClassSymbol *Object;
+        extern ClassSymbol *Array;
+        extern ClassSymbol *Trait;
+        extern ClassSymbol *Class;
+        extern ClassSymbol *Enum;
+        extern ClassSymbol *Function;
+    }
 } // Seserot
 
 #endif //SESEROT_GEN0_SYMBOL_TABLE_H

@@ -31,7 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <llvm/IR/GlobalIFunc.h>
 #include "ErrorTable.h"
 #include "Symbol.h"
-#include "BuildIn.h"
 #include "SymbolTable.h"
 #include <map>
 #include <unordered_map>
@@ -83,6 +82,9 @@ namespace Seserot {
         void importSymbols(const std::vector<std::string_view> &symbols);
 
         Token &read(size_t &);
+
+        void appendError(size_t code, const std::string &message, const SourcePosition &position,
+                         const std::string &category = "error");
 
         static ClassSymbol *currentClassSymbol(Symbol *);
 

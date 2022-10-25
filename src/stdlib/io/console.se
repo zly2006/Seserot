@@ -1,6 +1,6 @@
 package seserot.io
 
-function print<T>(var v: T) {
+function toString<T>(var v: T) {
     var s = v.toString()
     llvm {
 

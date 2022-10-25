@@ -47,6 +47,46 @@ namespace Seserot {
                 return String;
             }
         }
+        else if (state == Character) {
+            if (fileContent[cursor] == '\\') {
+                moveCursor(2);
+                return Character;
+            }
+            else if (fileContent[cursor] == '\'') {
+                tokens.push_back(Token{
+                        startPosition, position,
+                        Token::Literal, parseLiteral(fileContent.substr(start, cursor - start))
+                });
+                moveCursor();
+                return Ready;
+            }
+            else if (fileContent[cursor] == '\n') {
+                errorTable.interrupt("Unexpected new line in character.");
+                return FatalError;
+            }
+            else {
+                moveCursor();
+                return Character;
+            }
+        }
+        else if (state == MultiLineString) {
+            if (fileContent[cursor] == '\\') {
+                moveCursor(2);
+                return Character;
+            }
+            else if (fileContent[cursor] == '\'') {
+                tokens.push_back(Token{
+                        startPosition, position,
+                        Token::Character, parseLiteral(fileContent.substr(start, cursor - start))
+                });
+                moveCursor();
+                return Ready;
+            }
+            else {
+                moveCursor();
+                return Character;
+            }
+        }
         else if (state == MultiLineString) {
             if (fileContent.length() > cursor + 2
                 && fileContent[cursor + 0] == '\"'
@@ -170,6 +210,11 @@ namespace Seserot {
                     return String;
                 }
             }
+            else if (fileContent[cursor] == '\'') {
+                moveCursor();
+                syncStart();
+                return Character;
+            }
             else if (fileContent[cursor] == '/' && fileContent.length() > cursor + 1) {
                 if (fileContent[cursor + 1] == '/') {
                     moveCursor(2);
@@ -209,6 +254,13 @@ namespace Seserot {
                         }
                     }
                 }
+                // todo: error code
+                errorTable.errors.push_back(std::make_unique<CompilerWarning>(
+                        startPosition, 0,
+                        "Unknown character: " + std::string(1, fileContent[cursor])
+                ));
+                moveCursor();
+                return Ready;
             }
         }
         errorTable.interrupt("Unexpected state.");
@@ -232,24 +284,34 @@ namespace Seserot {
                 switch (content[i]) {
                     case 'a':
                         string.push_back('\a');
+                        break;
                     case 'n':
                         string.push_back('\n');
+                        break;
                     case 't':
                         string.push_back('\t');
+                        break;
                     case 'r':
                         string.push_back('\r');
+                        break;
                     case 'f':
                         string.push_back('\f');
+                        break;
                     case 'v':
                         string.push_back('\v');
+                        break;
                     case '0':
                         string.push_back('\0');
+                        break;
                     case '\'':
                         string.push_back('\'');
+                        break;
                     case '\"':
                         string.push_back('\"');
+                        break;
                     case '\\':
                         string.push_back('\\');
+                        break;
                     case 'x': {
                         if (i + 2 < content.length()) {
                             char a[2];
@@ -270,6 +332,7 @@ namespace Seserot {
                         else {
                             errorTable.interrupt("parse literal: HEX");
                         }
+                        break;
                     }
                     case 'u': {
                         if (i + 4 < content.length()) {
@@ -278,6 +341,7 @@ namespace Seserot {
                         else {
                             errorTable.interrupt("parse literal: Unicode");
                         }
+                        break;
                     }
                 }
             }
@@ -330,6 +394,16 @@ namespace Seserot {
         if (tokens.empty() || tokens.back().type != Token::NewLine) {
             // 欺骗一下parser, 因为表达式都是以NewLine结尾的
             tokens.push_back(Token{tokens.back().stop, tokens.back().stop, Token::NewLine});
+        }
+        bool error = false;
+        for (const auto &item: errorTable.errors) {
+            if (typeid(CompilerError).before(typeid(*item))) {
+                error = true;
+            }
+            item->print();
+        }
+        if (error) {
+            errorTable.interrupt();
         }
     }
 } // Seserot

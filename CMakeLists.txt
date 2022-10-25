@@ -29,7 +29,6 @@ add_executable(Seserot
         src/ErrorTable.cpp
         src/CompilerError.cpp
         src/Parser.cpp
-        src/BuildIn.cpp
         src/AbstractSyntaxTreeNode.cpp
         src/ByteCodeWriter.cpp
         src/Symbol.cpp
@@ -52,3 +51,6 @@ enable_testing()
 add_test(NAME MainTest COMMAND Seserot -v)
 add_test(NAME ParamsMatchingTest COMMAND Seserot --dev-test params-matching)
 add_test(NAME TraitSymbolAfterTest COMMAND Seserot --dev-test trait-symbol-after)
+configure_file(src/Parser.cpp ./Parser.cpp COPYONLY)
+add_test(NAME LexerSpeedTest COMMAND Seserot --dev-test lexer Parser.cpp)
+

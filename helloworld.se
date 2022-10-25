@@ -41,7 +41,7 @@ operator add<T, P>(t: T, p: P) {
 
 struct B { //: Value, 1byte
     async function printHello() {
-        async print("Hello")
+        return await toString("Hello")
     }
 }
 

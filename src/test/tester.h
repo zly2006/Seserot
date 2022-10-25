@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SESEROT_GEN0_TESTER_H
 
 #include <string>
+#include <span>
 
-bool test(const std::string &what);
+bool test(const std::string &what, const std::span<std::string> &args);
 
 #endif //SESEROT_GEN0_TESTER_H

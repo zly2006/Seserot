@@ -55,7 +55,9 @@ namespace Seserot {
         // 作用：结束当前scope，检查symbol scope并整理currentFatherSymbol
         auto endScope = [&](Token &thisToken) {
             if (currentScope == nullptr) {
-                errorTable.errors.emplace_back(thisToken.start, 0, "unexpected \'}\'");//todo
+                errorTable.errors.emplace_back(std::make_unique<CompilerError>(
+                        thisToken.start, 0, "unexpected \'}\'"
+                ));//todo
                 errorTable.interrupt();
                 return;
             }
@@ -82,12 +84,11 @@ namespace Seserot {
                 token2scope[&tokens[i]] = currentScope;
                 if (tokens[i].content == "namespace") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                        errorTable.errors.emplace_back(tokens[i].stop, 2011, "namespace not found.");
+                        appendError(2011, "namespace name expected", tokens[i].start);
                         errorTable.interrupt("scanning namespaces");
                     }
                     if (currentFatherSymbol.top()->type != Symbol::Namespace) {
-                        errorTable.errors.emplace_back(tokens[i].start, 2501,
-                                                       "Namespace can only be defined in namespace scope.");
+                        appendError(2012, "namespace can only be defined in namespace", tokens[i].start);
                         errorTable.interrupt("scanning namespaces");
                     }
                     std::string name = read(i).content;
@@ -109,7 +110,8 @@ namespace Seserot {
                 }
                 else if (tokens[i].content == "class") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                        errorTable.errors.emplace_back(tokens[i].stop, 2012, "class name not found.");
+                        errorTable.errors.emplace_back(std::make_unique<CompilerError>
+                                                               (tokens[i].stop, 2012, "class name not found."));
                         errorTable.interrupt("scanning classes");
                     }
                     auto mod = parseModifiers(tokens.begin() + (long) i);
@@ -126,7 +128,9 @@ namespace Seserot {
                         symbol->signature = "::" + name;
                     }
                     if (!symbolTable.emplace(std::unique_ptr<ClassSymbol>(symbol))) {
-                        errorTable.errors.emplace_back(tokens[i].start, 2503, "class definition already exists.");
+                        errorTable.errors.emplace_back(std::make_unique<CompilerError>
+                                                               (tokens[i].start, 2503,
+                                                                "class definition already exists."));
                         errorTable.interrupt("scanning classes");
                     }
                     while (true) {
@@ -141,7 +145,8 @@ namespace Seserot {
                 }
                 else if (tokens[i].content == "function") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                        errorTable.errors.emplace_back(tokens[i].stop, 2013, "method name not found.");
+                        errorTable.errors.emplace_back(std::make_unique<CompilerError>(
+                                tokens[i].stop, 2013, "method name not found."));
                         errorTable.interrupt("scanning methods");
                     }
                     Modifiers mod = parseModifiers(tokens.begin() + (long) i);
@@ -157,14 +162,16 @@ namespace Seserot {
                     methodSymbol->father = father;
                     if (father != nullptr && father->modifiers & Static) {
                         if (!(methodSymbol->modifiers & Static)) {
-                            errorTable.errors.emplace_back(tokens[i].start, 0, "");//todo
+                            errorTable.errors.emplace_back(std::make_unique<CompilerError>(
+                                    tokens[i].start, 0, ""));//todo
                         }
                     }
                     if (i != tokens.size() - 1) {
                         if (tokens[i].type == Token::Operator && tokens[i].content == "<") {
                             Token &genericName = read(i);
                             if (genericName.type != Token::Name) {
-                                errorTable.errors.emplace_back(tokens[i].start, 0, "");//todo
+                                //todo: error code
+                                appendError(0, "generic arg name expected", genericName.start);
                                 errorTable.interrupt();
                             }
                             methodSymbol->genericArgs.push_back
@@ -191,7 +198,7 @@ namespace Seserot {
                     }
 
                     if (!symbolTable.emplace(std::unique_ptr<MethodSymbol>(methodSymbol))) {
-                        errorTable.errors.emplace_back(tokens[i].start, 2504, "method definition already exists.");
+                        appendError(2504, "method definition already exists", tokens[i].start);
                         errorTable.interrupt("scanning methods");
                     }
                 }
@@ -204,7 +211,7 @@ namespace Seserot {
                     if (tokens[i].content == "val") {
                         if (mod & Mutable) {
                             //todo: 分配错误码
-                            errorTable.errors.emplace_back(t.start, 0, "val cannot be mutable.");
+                            appendError(0, "val cannot be mutable", tokens[i].start);
                         }
                     } // val
                     if (methodSymbol != nullptr) {
@@ -215,7 +222,8 @@ namespace Seserot {
                             msg += "variable ";
                             msg += t.content;
                             msg += " already exists.";
-                            errorTable.errors.emplace_back(t.start, 0, msg.c_str());
+                            errorTable.errors.emplace_back(std::make_unique<CompilerError>
+                                                                   (t.start, 0, msg.c_str()));
                         }
                     }
                     else if (classSymbol == currentFatherSymbol.top()) {
@@ -226,13 +234,13 @@ namespace Seserot {
                     }
                     else {
                         //todo: 分配错误码
-                        errorTable.errors.emplace_back(t.start, 0, "properties should be declared in class scope.");
+                        appendError(0, "variable definition must be in class or method", t.start);
                     }
                 }
             }
         }
         if (currentScope != &root) {
-            errorTable.errors.emplace_back(tokens.back().stop, 0, "scope is not closed");
+            appendError(0, "scope not closed", tokens.back().stop);
         }
         if (!errorTable.errors.empty()) {
             errorTable.interrupt("scanning failed.");
@@ -257,7 +265,7 @@ namespace Seserot {
         while (modifiers.count(first->content)) {
             if (first->type == Token::Name) {
                 if (ret.contains(first->content)) {
-                    errorTable.errors.emplace_back(first->start, 2505, "repeating modifier.");
+                    appendError(0, "modifier duplicated", first->start);
                 }
                 ret.insert(first->content);
             }
@@ -276,7 +284,7 @@ namespace Seserot {
         for (auto &mo: ret) {
             if (mo == "public" || mo == "private" || mo == "internal" || mo == "protected") {
                 if (accessibilityParsed) {
-                    errorTable.errors.emplace_back(it->start, 2505, "conflict accessibility modifier.");
+                    appendError(2505, "conflict accessibility modifier.", it->start);
                     errorTable.interrupt();
                 }
                 accessibilityParsed = true;
@@ -296,7 +304,7 @@ namespace Seserot {
             }
             else if (mo == "mutable" || mo == "immutable") {
                 if (mutableParsed) {
-                    errorTable.errors.emplace_back(it->start, 2505, "conflict mutable modifier.");
+                    appendError(2505, "conflict mutable modifier.", it->start);
                 }
                 mutableParsed = true;
                 if (mo == "mutable") {
@@ -329,7 +337,7 @@ namespace Seserot {
             }
         }
         if ((m & Final) && (m & Static)) {
-            errorTable.errors.emplace_back(it->start, 2505, "static member cannot be final.");
+            appendError(2505, "final and static cannot be used together.", it->start);
         }
         return (Modifiers) m;
     }
@@ -343,7 +351,7 @@ namespace Seserot {
         do {
             i++;
             if (i == tokens.size()) {
-                errorTable.errors.emplace_back(tokens[i - 1].stop, 2014, "unexpected EOF");
+                appendError(2014, "unexpected end of file.", tokens.back().stop);
                 errorTable.interrupt("reading tokens");
             }
         } while (tokens[i].type == Token::NewLine);
@@ -386,13 +394,13 @@ namespace Seserot {
             if (it->content == "import" && it->type == Token::Name) {
                 if (it->parsed != Token::Ready || it + 1 == tokens.end()) {
                     // todo:分配错误码
-                    errorTable.errors.emplace_back(it->start, 0, "error import statement.");
+                    appendError(0, "import statement error", it->start);
                 }
                 it->parsed = Token::Statement;
                 it++;
                 if (it->type != Token::Name) {
                     // todo:分配错误码
-                    errorTable.errors.emplace_back(it->start, 0, "error import statement.");
+                    appendError(0, "import statement error", it->start);
                 }
                 imports.push_back(it->content);
             }
@@ -424,6 +432,7 @@ namespace Seserot {
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
+
     /**
      * 解析表达式
      * @param tokenIter 最后为表达式内的最后一个token，需要手动++
@@ -516,8 +525,7 @@ namespace Seserot {
                     if (tokenIter->content == ";") {
                         if (!untilBracket) {
                             //todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "The expression is not ended but "
-                                                                                "found a semicolon.");
+                            appendError(0, "unexpected ';' in expression.", tokenIter->start);
                             return nullptr;
                         }
                         success = true;
@@ -534,7 +542,7 @@ namespace Seserot {
                         auto *expr = parseExpression(tokenIter, ')');
                         if (expr == nullptr) {
                             // todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
+                            appendError(0, "unexpected ')'", tokenIter->start);
                             errorTable.interrupt();
                         }
                         if (tokenIter->type == Token::Operator && tokenIter->content == ")") {
@@ -543,7 +551,7 @@ namespace Seserot {
                         }
                         else {
                             // todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "invalid bracket.");
+                            appendError(0, "unexpected ')'", tokenIter->start);
                             errorTable.interrupt();
                         }
                     }
@@ -566,7 +574,7 @@ namespace Seserot {
                         symbolTable.lookup(tokenIter->content, token2scope[&*tokenIter]);
                         if (!methodSymbol) {
                             //todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "No such function.");
+                            appendError(0, "undefined function '" + tokenIter->content + "'.", tokenIter->start);
                         }
                         auto *pNode = new AST::FunctionInvokeNode(methodSymbol);
                         s.pop_back();
@@ -630,14 +638,14 @@ namespace Seserot {
                             // e.g.
                             // 1.3ue5u
                             //todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "double literal cannot have suffix.");
+                            appendError(0, "invalid number suffix.", tokenIter->start);
                         }
                         if (negative) {
                             value = -value;
                         }
                         value *= pow(10, power);
                         if (std::isnan(value) || std::isinf(value)) {
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "bad literal: NaN / Inf");
+                            appendError(0, "Double literal cannot be NaN / Inf.", tokenIter->start);
                         }
                         node = new AST::FloatingConstantNode(value);
                     }
@@ -647,7 +655,7 @@ namespace Seserot {
                         node = string2FitNumber(toParse, val, negative);
                         if (!node) {
                             //todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "number size overflowed.");
+                            appendError(0, "number size overflow.", tokenIter->start);
                             node = new AST::IntegerConstantNode(0);
                         }
                     }
@@ -656,7 +664,7 @@ namespace Seserot {
                     for (int i = 0; i < suffix.length(); ++i) {
                         if (suffix.find(suffix[i], i + 1) != std::string::npos) {
                             // todo: 分配错误码
-                            errorTable.errors.emplace_back(tokenIter->start, 0, "repeated number modifier.");
+                            appendError(0, "repeated number modifier.", tokenIter->start);
                             break;
                         }
                     }
@@ -678,7 +686,7 @@ namespace Seserot {
 
         if (!success) {
             // todo:分配错误码
-            errorTable.errors.emplace_back(tokenIter->start, 0, "unexpected EOF while parsing expressions.");
+            appendError(0, "unexpected EOF while parsing expressions.", tokenIter->start);
             errorTable.interrupt();
         }
 
@@ -729,6 +737,7 @@ namespace Seserot {
         }
         return nullptr;
     }
+
 #pragma clang diagnostic pop
 
     template<class T>
@@ -795,12 +804,12 @@ namespace Seserot {
         pos++;
         if (pos == tokens.size()) {
             //todo: 分配错误码
-            errorTable.errors.emplace_back(tokens.back().stop, 0, "unexpected EOF");
+            appendError(0, "got EOF but expected an identifier.", tokens[pos - 1].start);
             errorTable.interrupt();
         }
         if (tokens[pos].type != Token::Name) {
             //todo: 分配错误码
-            errorTable.errors.emplace_back(tokens.back().stop, 0, "Expected an identifier.");
+            appendError(0, "expected identifier.", tokens[pos].start);
             errorTable.interrupt();
         }
         return tokens[pos];
@@ -810,12 +819,12 @@ namespace Seserot {
         pos++;
         if (pos == tokens.size()) {
             //todo: 分配错误码
-            errorTable.errors.emplace_back(tokens.back().stop, 0, "unexpected EOF");
+            appendError(0, "unexpected EOF", tokens.back().stop);
             errorTable.interrupt();
         }
         if (tokens[pos].type != Token::Operator) {
             //todo: 分配错误码
-            errorTable.errors.emplace_back(tokens.back().stop, 0, "Expected an operator.");
+            appendError(0, "expected operator.", tokens[pos].start);
             errorTable.interrupt();
         }
         return tokens[pos];
@@ -825,7 +834,7 @@ namespace Seserot {
         pos++;
         if (pos == tokens.size()) {
             //todo: 分配错误码
-            errorTable.errors.emplace_back(tokens.back().stop, 0, "unexpected EOF");
+            appendError(0, "got EOF but expected an identifier.", tokens[pos - 1].start);
             errorTable.interrupt();
         }
         return tokens[pos].type == Token::Operator && tokens[pos].content == content;
@@ -858,11 +867,10 @@ namespace Seserot {
 
     llvm::Type *Parser::getLLVMType(TraitSymbol *traitSymbol) const {
         std::map<TraitSymbol *, llvm::Type *> defaultType = {
-                {SymbolTable::Double, llvm::Type::getDoubleTy(*thisContext)},
-                {SymbolTable::Long,   llvm::Type::getInt64Ty(*thisContext)},
-                {SymbolTable::Int,    llvm::Type::getInt32Ty(*thisContext)},
-                {SymbolTable::Long,   llvm::Type::getInt16PtrTy(*thisContext)},
-                // todo: build in当时是什么屎山啊……
+                {BuiltinSymbols::Double, llvm::Type::getDoubleTy(*thisContext)},
+                {BuiltinSymbols::Long,   llvm::Type::getInt64Ty(*thisContext)},
+                {BuiltinSymbols::Int,    llvm::Type::getInt32Ty(*thisContext)},
+                {BuiltinSymbols::Long,   llvm::Type::getInt16PtrTy(*thisContext)},
         };
         if (defaultType.contains(traitSymbol)) return defaultType[traitSymbol];
         if (!traitSymbol->genericArgs.empty()) return nullptr;
@@ -891,36 +899,36 @@ namespace Seserot {
         tokenIter++;
         if (tokenIter == tokens.end()) {
             //todo: 分配错误码
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            appendError(0, "unexpected EOF", tokens.back().stop);
             return nullptr;
         }
         bool hasBrackets =
                 tokenIter->content == "(" && tokenIter->type == Token::Operator;
-        AST::IfElseNode *node = new AST::IfElseNode();
+        auto *node = new AST::IfElseNode();
         node->condition = parseExpression(tokenIter);
         if (node->condition == nullptr) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "Expected an expression.");
+            appendError(0, "expected expression.", tokenIter->start);
             return nullptr;
         }
         if (tokenIter == tokens.end()) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            appendError(0, "unexpected EOF", tokens.back().stop);
             return nullptr;
         }
         tokenIter++;
         if (tokenIter == tokens.end()) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            appendError(0, "unexpected EOF", tokens.back().stop);
             return nullptr;
         }
         bool hasBraces =
                 tokenIter->content == "{" && tokenIter->type == Token::Operator;
         if (!hasBrackets && !hasBraces) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "Non-bracket if expected a '{'.");
+            appendError(0, "Non-bracket if expected a '{'.", tokenIter->start);
             return nullptr;
         }
         if (hasBraces) {
             tokenIter++;
             if (tokenIter == tokens.end()) {
-                errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+                appendError(0, "unexpected EOF", tokens.back().stop);
                 return nullptr;
             }
             node->thenBlock = parseBlock(tokenIter);
@@ -929,28 +937,28 @@ namespace Seserot {
             node->thenBlock = parseExpression(tokenIter);
         }
         if (node->thenBlock == nullptr) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "Expected an expression.");
+            appendError(0, "expected expression.", tokenIter->start);
             return nullptr;
         }
         if (tokenIter == tokens.end()) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            appendError(0, "unexpected EOF", tokenIter->stop);
             return nullptr;
         }
         tokenIter++;
         if (tokenIter == tokens.end()) {
-            errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+            appendError(0, "unexpected EOF", tokenIter->stop);
             return nullptr;
         }
         if (tokenIter->type == Token::Name && tokenIter->content == "else") {
             tokenIter++;
             if (tokenIter == tokens.end()) {
-                errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+                appendError(0, "unexpected EOF", tokenIter->stop);
                 return nullptr;
             }
             if (tokenIter->content == "{" && tokenIter->type == Token::Operator) {
                 tokenIter++;
                 if (tokenIter == tokens.end()) {
-                    errorTable.errors.emplace_back(tokenIter->stop, 0, "unexpected EOF");
+                    appendError(0, "unexpected EOF", tokenIter->stop);
                     return nullptr;
                 }
                 node->elseBlock = parseBlock(tokenIter);
@@ -959,7 +967,7 @@ namespace Seserot {
                 node->elseBlock = parseExpression(tokenIter);
             }
             if (node->elseBlock == nullptr) {
-                errorTable.errors.emplace_back(tokenIter->stop, 0, "Expected an expression.");
+                appendError(0, "expected expression.", tokenIter->start);
                 return nullptr;
             }
         }
@@ -985,5 +993,13 @@ namespace Seserot {
             symbol = symbol->father;
         }
         return (NamespaceSymbol *) symbol;
+    }
+
+    void Parser::appendError(
+            size_t code, const std::string &message, const SourcePosition &position,
+            const std::string &category) {
+        errorTable.errors.push_back(std::make_unique<CompilerError>(
+                position, code, message, category
+        ));
     }
 } // Seserot

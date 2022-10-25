@@ -18,3 +18,13 @@ My toy compiler
 
 This compiler is based on [LLVM](https://llvm.org), so you need to [install llvm](https://llvm.org/docs/CMake.html)
 before building this compiler.
+
+## To-Do List
+
+| Feature  | Status   |
+|----------|----------|
+| Lexer    | Done     |
+| Parser   | WIP      |
+| AST      | WIP      |
+| LLVM IR  | WIP      |
+| Debugger | Planning |
