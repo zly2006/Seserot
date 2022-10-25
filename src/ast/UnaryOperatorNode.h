@@ -20,12 +20,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SESEROT_GEN0_UNARY_OPERATOR_NODE_H
 
 #include "ASTNode.h"
+#include <memory>
 
 namespace Seserot::AST {
     class UnaryOperatorNode : public ASTNode {
     public:
         Actions action;
-        ASTNode *child;
+        std::unique_ptr<ASTNode> child;
 
         Actions getAction() override;
 

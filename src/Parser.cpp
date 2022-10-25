@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ast/FloatingConstantNode.h"
 #include "ast/StringConstantNode.h"
 #include "ast/BinaryOperatorNode.h"
+#include "ast/AccessVariableNode.h"
 #include "SymbolTable.h"
 
 #include <utility>
@@ -435,13 +436,13 @@ namespace Seserot {
 
     /**
      * 解析表达式
-     * @param tokenIter 最后为表达式内的最后一个token，需要手动++
+     * @param tokenIter 表达式后一个token
      * @param untilBracket 遇到这个括号停止eat，进入后续的解析
      * @return
      */
-    AST::ASTNode *Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
+    std::unique_ptr<AST::ASTNode> Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
         AST::ASTNode::Actions actions;
-        std::vector<std::variant<AST::ASTNode *, std::string>> s;
+        std::vector<std::variant<std::unique_ptr<AST::ASTNode>, std::string>> s;
         const std::map<std::string, AST::ASTNode::Actions> actionMap{
                 {"+",  AST::ASTNode::Actions::Add},
                 {"-",  AST::ASTNode::Actions::Subtract},
@@ -512,7 +513,7 @@ namespace Seserot {
             switch (tokenIter->type) {
                 case Token::NewLine:
                     if (!untilBracket && s.back().index() == 0) {
-                        // 为什么这么写？
+                        // 为什么用最后一个的index判断结束？
                         // 注意此时做不到太精细的分析，同时我们允许用换行分割表达式，那就只能这样了
                         // 对于if，函数之类的，由于括号会继续解析
                         tokenIter++;
@@ -523,7 +524,7 @@ namespace Seserot {
                     break;
                 case Token::Operator: {
                     if (tokenIter->content == ";") {
-                        if (!untilBracket) {
+                        if (untilBracket) {
                             //todo: 分配错误码
                             appendError(0, "unexpected ';' in expression.", tokenIter->start);
                             return nullptr;
@@ -533,36 +534,39 @@ namespace Seserot {
                     }
                     if (tokenIter->content.length() == 1 && tokenIter->content[0] == untilBracket) {
                         success = true;
+                        tokenIter++;
                         break;//因为括号结束
                     }
 
-                    else if (tokenIter->type == Token::Operator && tokenIter->content == "(") {
+
+                    else if (tokenIter->content == "(") {
                         // brackets
                         tokenIter++;
-                        auto *expr = parseExpression(tokenIter, ')');
-                        if (expr == nullptr) {
+                        auto expr = parseExpression(tokenIter, ')');
+                        if (!expr) {
                             // todo: 分配错误码
                             appendError(0, "unexpected ')'", tokenIter->start);
                             errorTable.interrupt();
                         }
-                        if (tokenIter->type == Token::Operator && tokenIter->content == ")") {
-                            s.emplace_back(expr);
-                            tokenIter++;
-                        }
-                        else {
-                            // todo: 分配错误码
-                            appendError(0, "unexpected ')'", tokenIter->start);
-                            errorTable.interrupt();
-                        }
+                        s.emplace_back(std::move(expr));
                     }
                     else {
+                        if (!actionMap.contains(tokenIter->content)) {
+                            success = true;
+                            break; // 因为不是运算符结束，不需要前进到
+                        }
                         s.emplace_back(tokenIter->content);
                         tokenIter++;
                     }
-                    // todo:
                     break;
                 }
                 case Token::Name: {
+                    if (tokenIter->content == "true" || tokenIter->content == "false") {
+                        s.emplace_back(std::make_unique<AST::IntegerConstantNode>(tokenIter->content == "true"));
+                        tokenIter++;
+                        break;
+                    }
+                    auto symbols = symbolTable.lookup(tokenIter->content, token2scope[&*tokenIter]);
                     if (tokenIter + 1 != tokens.end() && (tokenIter + 1)->type == Token::Operator &&
                         (tokenIter + 1)->content == "(") {
                         // function
@@ -576,25 +580,53 @@ namespace Seserot {
                             //todo: 分配错误码
                             appendError(0, "undefined function '" + tokenIter->content + "'.", tokenIter->start);
                         }
-                        auto *pNode = new AST::FunctionInvokeNode(methodSymbol);
+                        std::unique_ptr<AST::ASTNode> node = std::make_unique<AST::FunctionInvokeNode>(methodSymbol);
                         s.pop_back();
                         // todo: set args
                         tokenIter++;
-                        s.push_back(pNode);
+                        s.emplace_back(std::move(node));
                     }
-                    //infix function
-                    if (reference.contains(&*tokenIter)) {
-                        auto symbol = reference.find(&*tokenIter);
-                        if (symbol == reference.end()) {
-                            errorTable.interrupt();
-                            break;
-                        }
-                        if (symbol->second->type == Symbol::Method) {
-                            auto function = (MethodSymbol *) symbol->second;
-                            if (function->modifiers & Infix) {
-                                // infix call
+                    // name + name: infix or disallowed
+                    if (!s.empty() && s.back().index() == 0) {
+                        //infix function
+                        bool found = false;
+                        for (const auto &item: symbols) {
+                            if (item->type == Symbol::Type::Method) {
+                                auto methodSymbol = dynamic_cast<MethodSymbol *>(item);
+                                if (methodSymbol->modifiers & Infix) {
+                                    auto node = std::make_unique<AST::FunctionInvokeNode>(methodSymbol);
+                                    node->args.push_back(std::move(std::get<0>(s.back())));
+                                    s.pop_back();
+                                    s.emplace_back(std::move(node));
+                                    tokenIter++;
+                                    found = true;
+                                    break;
+                                }
                             }
                         }
+                        if (found) {
+                            break;
+                        }
+                        // 这个时候，如果是name+name，那就是错误的
+                        // 所以，中止表达式解析防止错误发生
+                        success = true;
+                        break;
+                    }
+                    // variable access
+                    if (!symbols.empty()) {
+                        bool found = false;
+                        for (const auto &item: symbols) {
+                            if (item->type == Symbol::Type::Variable) {
+                                auto node = std::make_unique<AST::AccessVariableNode>(
+                                        dynamic_cast<VariableSymbol *>(item));
+                                s.emplace_back(std::move(node));
+                                found = true;
+                                tokenIter++;
+                                break;
+                            }
+                        }
+                        if (found)
+                            break;
                     }
                     break;
                 }
@@ -617,7 +649,7 @@ namespace Seserot {
                     std::string toParse = tokenIter->content;
                     long power = 0;//e后面的指数
                     size_t size;
-                    AST::ASTNode *node;
+                    std::unique_ptr<AST::ASTNode> node;
                     std::variant<long long, long double, unsigned long long> v;
                     std::string suffix;
                     if (auto index = toParse.find('e'); index != std::string::npos) {
@@ -647,7 +679,7 @@ namespace Seserot {
                         if (std::isnan(value) || std::isinf(value)) {
                             appendError(0, "Double literal cannot be NaN / Inf.", tokenIter->start);
                         }
-                        node = new AST::FloatingConstantNode(value);
+                        node = std::make_unique<AST::FloatingConstantNode>(value);
                     }
                     else {
                         size_t val;
@@ -656,7 +688,7 @@ namespace Seserot {
                         if (!node) {
                             //todo: 分配错误码
                             appendError(0, "number size overflow.", tokenIter->start);
-                            node = new AST::IntegerConstantNode(0);
+                            node = std::make_unique<AST::IntegerConstantNode>(0);
                         }
                     }
 
@@ -669,12 +701,12 @@ namespace Seserot {
                         }
                     }
 
-                    s.emplace_back(node);
+                    s.emplace_back(std::move(node));
                     tokenIter++;
                     break;
                 }
                 case Token::Literal: {
-                    s.emplace_back(new AST::StringConstantNode{tokenIter->content});
+                    s.emplace_back(std::make_unique<AST::StringConstantNode>(tokenIter->content));
                     tokenIter++;
                     break;
                 }
@@ -696,15 +728,15 @@ namespace Seserot {
                     AST::ASTNode::Actions action = actionMap.at(std::get<std::string>(*it));
                     if (set.contains(action)) {
                         if (unary.contains(action)) {
-                            auto *node = new AST::UnaryOperatorNode();
+                            auto node = std::make_unique<AST::UnaryOperatorNode>();
                             node->action = action;
                             // it -> op
                             it = s.erase(it);
                             // it -> obj
-                            node->child = std::get<0>(*it);
+                            node->child = std::move(std::get<0>(*it));
                             it = s.erase(it);
                             // it -> obj+1
-                            it = s.insert(it, node);
+                            it = s.insert(it, std::move(node));
                             // it -> new obj
                         }
                     }
@@ -713,27 +745,27 @@ namespace Seserot {
                         errorTable.interrupt();
                     }
                     else {
-                        auto *node = new AST::BinaryOperatorNode();
+                        auto node = std::make_unique<AST::BinaryOperatorNode>();
                         node->action = action;
                         // it -> op
                         it--;
                         // it -> op-1
-                        node->left = std::get<0>(*it);
+                        node->left = std::move(std::get<0>(*it));
                         it = s.erase(it);
                         // it -> op
                         it = s.erase(it);
                         // it -> op+1
-                        node->right = std::get<0>(*it);
+                        node->right = std::move(std::get<0>(*it));
                         it = s.erase(it);
                         // it -> op+2
-                        it = s.insert(it, node);
+                        it = s.insert(it, std::move(node));
                     }
                 }
             }
         }
 
         if (s.size() == 1 && s.front().index() == 0) {
-            return std::get<0>(s.front());
+            return std::move(std::get<0>(s.front()));
         }
         return nullptr;
     }
@@ -760,7 +792,7 @@ namespace Seserot {
      * @param negative 表示这个数字是不是false
      * @return 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
      */
-    AST::IntegerConstantNode *Parser::string2FitNumber(const std::string &str, size_t &ret, bool negative) {
+    std::unique_ptr<AST::IntegerConstantNode> Parser::string2FitNumber(const std::string &str, size_t &ret, bool negative) {
         std::stringstream ss;
         unsigned long long ll;
         ss << str;
@@ -776,25 +808,25 @@ namespace Seserot {
             return nullptr;
         }
         if (ll & 0xffffffff00000000ull) {
-            return new AST::IntegerConstantNode((uint64) ll);
+            return std::make_unique<AST::IntegerConstantNode>((uint64) ll);
         }
         else if (negative && (ll & 80000000ull)) {
-            return new AST::IntegerConstantNode((int64) -ll);
+            return std::make_unique<AST::IntegerConstantNode>((int64) -ll);
         }
         else if (ll & 0xffff0000ull) {
-            return new AST::IntegerConstantNode((uint32) ll);
+            return std::make_unique<AST::IntegerConstantNode>((uint32) ll);
         }
         else if (negative && (ll & 8000ull)) {
-            return new AST::IntegerConstantNode((int32) -ll);
+            return std::make_unique<AST::IntegerConstantNode>((int32) -ll);
         }
         else if (ll & 0xff00ull) {
-            return new AST::IntegerConstantNode((uint16) ll);
+            return std::make_unique<AST::IntegerConstantNode>((uint16) ll);
         }
         else if (negative && (ll & 80ull)) {
-            return new AST::IntegerConstantNode((int16) -ll);
+            return std::make_unique<AST::IntegerConstantNode>((int16) -ll);
         }
         else {
-            return new AST::IntegerConstantNode((int8) ll);
+            return std::make_unique<AST::IntegerConstantNode>((int8) ll);
         }
     }
 
@@ -892,7 +924,7 @@ namespace Seserot {
 
     }
 
-    AST::ASTNode *Parser::parseIf(Parser::token_iter &tokenIter) {
+    std::unique_ptr<AST::ASTNode> Parser::parseIf(Parser::token_iter &tokenIter) {
         if (tokenIter->content != "if" || tokenIter->type != Token::Name) {
             return nullptr;
         }
@@ -904,17 +936,22 @@ namespace Seserot {
         }
         bool hasBrackets =
                 tokenIter->content == "(" && tokenIter->type == Token::Operator;
-        auto *node = new AST::IfElseNode();
-        node->condition = parseExpression(tokenIter);
+        auto node = std::make_unique<AST::IfElseNode>();
+        if (!hasBrackets) {
+            node->condition = std::move(parseExpression(tokenIter));
+        }
+        else {
+            tokenIter++;
+            node->condition = std::move(parseExpression(tokenIter, ')'));
+            if (tokenIter == tokens.end()) {
+                appendError(0, "unexpected EOF", tokens.back().stop);
+                return nullptr;
+            }
+        }
         if (node->condition == nullptr) {
             appendError(0, "expected expression.", tokenIter->start);
             return nullptr;
         }
-        if (tokenIter == tokens.end()) {
-            appendError(0, "unexpected EOF", tokens.back().stop);
-            return nullptr;
-        }
-        tokenIter++;
         if (tokenIter == tokens.end()) {
             appendError(0, "unexpected EOF", tokens.back().stop);
             return nullptr;
@@ -944,11 +981,6 @@ namespace Seserot {
             appendError(0, "unexpected EOF", tokenIter->stop);
             return nullptr;
         }
-        tokenIter++;
-        if (tokenIter == tokens.end()) {
-            appendError(0, "unexpected EOF", tokenIter->stop);
-            return nullptr;
-        }
         if (tokenIter->type == Token::Name && tokenIter->content == "else") {
             tokenIter++;
             if (tokenIter == tokens.end()) {
@@ -972,19 +1004,18 @@ namespace Seserot {
             }
         }
 
-        return node;
+        return std::move(node);
     }
 
-    AST::ASTNode *Parser::parseFor(Parser::token_iter &tokenIter) {
-
+    std::unique_ptr<AST::ASTNode> Parser::parseFor(Parser::token_iter &tokenIter) {
         return nullptr;
     }
 
-    AST::ASTNode *Parser::parseWhile(Parser::token_iter &tokenIter) {
+    std::unique_ptr<AST::ASTNode> Parser::parseWhile(Parser::token_iter &tokenIter) {
         return nullptr;
     }
 
-    AST::ASTNode *Parser::parseBlock(Parser::token_iter &tokenIter) {
+    std::unique_ptr<AST::ASTNode> Parser::parseBlock(Parser::token_iter &tokenIter) {
         return nullptr;
     }
 

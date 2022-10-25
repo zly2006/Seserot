@@ -32,7 +32,7 @@ namespace Seserot::AST{
         MethodSymbol *methodSymbol;
 
         std::string name;
-        std::vector<ASTNode *> args;
+        std::vector<std::unique_ptr<ASTNode>> args;
 
         explicit FunctionInvokeNode(MethodSymbol *methodSymbol);
 

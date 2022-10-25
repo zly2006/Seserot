@@ -25,12 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <cstring>
 #include <map>
+#include <memory>
 #include <llvm/CodeGen/ValueTypes.h>
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
 #include "../Symbol.h"
+#include "../SymbolTable.h"
 
 namespace Seserot::AST {
     class ASTNode {

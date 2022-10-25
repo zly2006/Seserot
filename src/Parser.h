@@ -39,11 +39,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <optional>
 #include "ast/ASTNode.h"
 #include "ast/IntegerConstantNode.h"
+#include "test/tester.h"
 
 namespace Seserot {
     class Parser {
     private:
-        friend int::main(int, char **, char **);
+        friend bool::test(const std::string &what, const std::span<std::string> &args);
+
 
         using token_iter = std::vector<Token>::iterator;
     public:
@@ -92,17 +94,17 @@ namespace Seserot {
 
         static NamespaceSymbol *currentNamespaceSymbol(Symbol *);
 
-        AST::ASTNode *parseExpression(token_iter &tokenIter, char untilBracket = 0);
+        std::unique_ptr<AST::ASTNode> parseExpression(token_iter &tokenIter, char untilBracket = 0);
 
-        AST::ASTNode *parseIf(token_iter &tokenIter);
+        std::unique_ptr<AST::ASTNode> parseIf(token_iter &tokenIter);
 
-        AST::ASTNode *parseWhile(token_iter &tokenIter);
+        std::unique_ptr<AST::ASTNode> parseWhile(token_iter &tokenIter);
 
-        AST::ASTNode *parseFor(token_iter &tokenIter);
+        std::unique_ptr<AST::ASTNode> parseFor(token_iter &tokenIter);
 
-        AST::ASTNode *parseBlock(token_iter &tokenIter);
+        std::unique_ptr<AST::ASTNode> parseBlock(token_iter &tokenIter);
 
-        static AST::IntegerConstantNode *string2FitNumber(const std::string &str, size_t &ret, bool = false);
+        static std::unique_ptr<AST::IntegerConstantNode> string2FitNumber(const std::string &str, size_t &ret, bool = false);
 
         Token &expectIdentifier(size_t &pos);
 

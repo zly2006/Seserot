@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../Lexer.h"
 #include "../utils/sum_string.h"
 #include "../utils/myFormat.h"
+#include "../ast/IfElseNode.h"
+#include "../ast/IntegerConstantNode.h"
 #include <iostream>
 #include <random>
 #include <span>
@@ -96,6 +98,27 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         lexer.parse();
         clock_t end = clock();
         std::cout << "Time: " << (double) (end - start) / 1000 << "ms\n";
+        return true;
+    }
+    else if (what == "parser-if") {
+        ErrorTable errorTable;
+        Lexer lexer(errorTable, "if (true) 1 else 2");
+        lexer.parse();
+        Parser parser(lexer.tokens, errorTable);
+        parser.scan();
+        auto iterator = parser.tokens.begin();
+        auto ifExpr = parser.parseIf(iterator);
+        auto *ifNode = dynamic_cast<AST::IfElseNode *>(ifExpr.get());
+        TEST(ifExpr != nullptr);
+        auto *integer = dynamic_cast<AST::IntegerConstantNode *>(ifNode->condition.get());
+        TEST(integer != nullptr);
+        TEST(integer->v == 1);
+        integer = dynamic_cast<AST::IntegerConstantNode *>(ifNode->thenBlock.get());
+        TEST(integer != nullptr);
+        TEST(integer->v == 1);
+        integer = dynamic_cast<AST::IntegerConstantNode *>(ifNode->elseBlock.get());
+        TEST(integer != nullptr);
+        TEST(integer->v == 2);
         return true;
     }
     else {

@@ -56,4 +56,9 @@ namespace Seserot::AST {
     IntegerConstantNode::IntegerConstantNode(uint64 v) {
         this->v = llvm::APInt(64, v, false);
     }
+
+    IntegerConstantNode::IntegerConstantNode(bool v) {
+        this->v = llvm::APInt(1, v, false);
+        inferredType = BuiltinSymbols::Boolean;
+    }
 }

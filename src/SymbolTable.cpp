@@ -156,7 +156,7 @@ namespace Seserot {
         BuiltinSymbols::Array = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Array;"].get());
 #pragma endregion
 #pragma region Reflection
-        builtinTable.symbols.emplace("C::.Trait", std::make_unique<ClassSymbol>(
+        builtinTable.symbols.emplace("C::.Trait;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Trait",
                 std::vector<ClassSymbol>(),
@@ -165,7 +165,7 @@ namespace Seserot {
                 std::vector<TraitSymbol *>()
         ));
         BuiltinSymbols::Trait = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Trait;"].get());
-        builtinTable.symbols.emplace("C::.Trait", std::make_unique<ClassSymbol>(
+        builtinTable.symbols.emplace("C::.Class;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Class",
                 std::vector<ClassSymbol>(),
@@ -174,7 +174,7 @@ namespace Seserot {
                 std::vector<TraitSymbol *>{BuiltinSymbols::Trait}
         ));
         BuiltinSymbols::Class = dynamic_cast<ClassSymbol *>(builtinTable.symbols["C::.Class;"].get());
-        builtinTable.symbols.emplace("C::.Function", std::make_unique<ClassSymbol>(
+        builtinTable.symbols.emplace("C::.Function;", std::make_unique<ClassSymbol>(
                 nullptr,
                 "Function",
                 std::vector<ClassSymbol>{
@@ -212,6 +212,19 @@ namespace Seserot {
             if (scope->inside(item.second->scope)) {
                 if (item.second->name == name) {
                     result.push_back(item.second.get());
+                }
+            }
+        }
+        // check duplicate symbol
+        for (int i = 0; i < result.size(); i++) {
+            for (int j = i + 1; j < result.size(); j++) {
+                if (result[i]->scope->inside(result[j]->scope)) {
+                    result.erase(result.begin() + j);
+                    j--;
+                } else if (result[j]->scope->inside(result[i]->scope)) {
+                    result.erase(result.begin() + i);
+                    i--;
+                    break;
                 }
             }
         }

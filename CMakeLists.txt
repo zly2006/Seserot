@@ -39,7 +39,7 @@ add_executable(Seserot
         src/test/tester.h src/ast/IfElseNode.cpp
         src/ast/FunctionInvokeNode.cpp
         src/ast/StringConstantNode.cpp
-        src/SymbolTable.cpp)
+        src/SymbolTable.cpp src/ast/AccessVariableNode.cpp src/ast/AccessVariableNode.h)
 
 target_include_directories(Seserot PUBLIC "${PROJECT_BINARY_DIR}")
 
@@ -53,4 +53,4 @@ add_test(NAME ParamsMatchingTest COMMAND Seserot --dev-test params-matching)
 add_test(NAME TraitSymbolAfterTest COMMAND Seserot --dev-test trait-symbol-after)
 configure_file(src/Parser.cpp ./Parser.cpp COPYONLY)
 add_test(NAME LexerSpeedTest COMMAND Seserot --dev-test lexer Parser.cpp)
-
+add_test(NAME ParseIfExprTest COMMAND Seserot --dev-test parser-if)

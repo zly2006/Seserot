@@ -20,13 +20,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SESEROT_GEN0_IFELSENODE_H
 
 #include "ASTNode.h"
+#include "../test/tester.h"
+#include <span>
+#include <memory>
+
 namespace Seserot::AST {
 
     class IfElseNode : public ASTNode {
+        friend bool::test(const std::string &what, const std::span<std::string> &args);
     public:
-        ASTNode *condition;
-        ASTNode *thenBlock;
-        ASTNode *elseBlock;
+        std::unique_ptr<ASTNode> condition;
+        std::unique_ptr<ASTNode> thenBlock;
+        std::unique_ptr<ASTNode> elseBlock;
 
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };

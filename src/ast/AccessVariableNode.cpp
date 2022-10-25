@@ -16,36 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#ifndef SESEROT_INTEGER_CONSTANT_NODE_H
-#define SESEROT_INTEGER_CONSTANT_NODE_H
-
-#include "ASTNode.h"
-#include "../BasicStructures.h"
+#include "AccessVariableNode.h"
 
 namespace Seserot::AST {
-    class IntegerConstantNode : public ASTNode {
-    public:
-        llvm::APInt v;
+    llvm::Value *AccessVariableNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
+        return nullptr;
+    }
 
-        explicit IntegerConstantNode(bool v);
-
-        explicit IntegerConstantNode(int8 v);
-
-        explicit IntegerConstantNode(uint8 v);
-
-        explicit IntegerConstantNode(int16 v);
-
-        explicit IntegerConstantNode(uint16 v);
-
-        explicit IntegerConstantNode(int32 v);
-
-        explicit IntegerConstantNode(uint32 v);
-
-        explicit IntegerConstantNode(int64 v);
-
-        explicit IntegerConstantNode(uint64 v);
-
-        llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
-    };
-}
-#endif
+    AccessVariableNode::AccessVariableNode(VariableSymbol *variableSymbol) : variableSymbol(variableSymbol) {
+        inferredType = variableSymbol->returnType;
+    }
+} // Seserot
