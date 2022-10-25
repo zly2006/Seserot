@@ -32,9 +32,17 @@ namespace Seserot {
 
         explicit CompilerError(SourcePosition where, size_t code, std::string message, std::string category = "");
 
-        virtual std::string print();
+        virtual std::string toString();
+
+        virtual void print();
     };
 
+    class CompilerWarning: public CompilerError {
+    public:
+        explicit CompilerWarning(SourcePosition where, size_t code, std::string message, std::string category = "");
+
+        std::string toString() override;
+    };
 } // Seserot
 
 #endif //SESEROT_GEN0_COMPILER_ERROR_H

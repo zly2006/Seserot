@@ -114,7 +114,8 @@ Homepage: <https://seserot.se> //我好像要谁捐一个/doge
         else if (c == "--dev-test") {
             i++;
             std::cout << "Testing " << args[i] << "...\n";
-            if (test(args[i])) {
+            std::span<std::string> a(args.data() + i + 1, args.size() - i - 1);
+            if (test(args[i], a)) {
                 std::cout << "test " << args[i] << " passed" << std::endl;
             }
             else {

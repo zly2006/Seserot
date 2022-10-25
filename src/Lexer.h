@@ -65,9 +65,10 @@ namespace Seserot {
         const std::vector<std::string> operators = {
                 "<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
                 "&&", "||", "!=", "==", "..", "=>", "->", "--", "++",
+                "<<", ">>", //generic type arg
                 "+", "-", "*", "/", "%", ".", "<", ">", "!", "&", "|", "~", "=", ",", ":", "?", ";",
                 "(", ")", "{", "}", "[", "]",
-                "<<", ">>"//generic type arg
+                "#" // unused
         };
         const std::set<char> numberComponents = {
                 '.', 'e', 'E', 'l', 'L', 'u', 'U', // dot & suffix

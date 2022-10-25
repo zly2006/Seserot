@@ -24,26 +24,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../utils/myFormat.h"
 #include <iostream>
 #include <random>
+#include <span>
+#include <fstream>
 
 using namespace Seserot;
 using namespace llvm;
 
 #define TEST(expr) if (!(expr)) { std::cout << "test for `" #expr "` failed\n"; return false; }
 
-bool test(const std::string &what) {
+bool test(const std::string &what, const std::span<std::string> &args) {
     if (what == "params-matching") {
+        BuiltinSymbols::init();
         MethodSymbol methodSymbol(nullptr, "test", Modifiers::None, {}, {}, nullptr);
-        BuildIn buildIn;
         std::vector<size_t> expected = {0};
         std::cout << "Testing basic..." << std::endl;
-        auto numberArg = VariableSymbol(nullptr, "test", nullptr, Modifiers::None, buildIn.numberTrait);
+        auto numberArg = VariableSymbol(nullptr, "test", nullptr, Modifiers::None, BuiltinSymbols::Number);
         methodSymbol.args.push_back(numberArg);
-        TEST(methodSymbol.match({buildIn.numberTrait}) == expected)
+        TEST(methodSymbol.match({BuiltinSymbols::Number}) == expected)
         std::cout << "Testing generic..." << std::endl;
         methodSymbol.genericArgs.push_back({nullptr, "Test", {}, nullptr, Modifiers::None, {}});
         VariableSymbol myGenericArg = {nullptr, "test", nullptr, Modifiers::None, &methodSymbol.genericArgs[0]};
         methodSymbol.args[0] = myGenericArg;
-        TEST(methodSymbol.match({buildIn.numberTrait}) == expected)
+        TEST(methodSymbol.match({BuiltinSymbols::Number}) == expected)
         std::cout << "Testing vararg..." << std::endl;
         expected = {};
         ClassSymbol newClass = {nullptr, "Test", {}, nullptr, Modifiers::None, {}};
@@ -54,14 +56,14 @@ bool test(const std::string &what) {
         expected = {0, 0, 1, 1};
         myGenericArg.modifiers = Modifiers::Vararg;
         methodSymbol.args.push_back(myGenericArg);
-        TEST(methodSymbol.match({&newClass, &newClass, buildIn.numberTrait, buildIn.stringClass}) == expected)
+        TEST(methodSymbol.match({&newClass, &newClass, BuiltinSymbols::Number, BuiltinSymbols::Number}) == expected)
         TEST((std::is_same<bool, bool>::value))
         return true;
     }
     else if (what == "hello-world") {
         using namespace Seserot;
         ErrorTable errorTable;
-        Lexer lexer(errorTable, "print(\"Hello, world!\")");
+        Lexer lexer(errorTable, "toString(\"Hello, world!\")");
         Parser parser(lexer.tokens, errorTable);
         parser.parse();
         LLVMContext context;
@@ -75,10 +77,25 @@ bool test(const std::string &what) {
         TraitSymbol traitSymbol(nullptr, "Test", Modifiers::None, {}, {});
         ClassSymbol symbol1 = {nullptr, "Test", {}, nullptr, Modifiers::None, {&traitSymbol}};
         ClassSymbol symbol2 = {nullptr, "Test", {}, nullptr, Modifiers::None, {&traitSymbol}};
-        TEST(traitSymbol.afterOrEqual(&traitSymbol))
-        TEST(symbol1.afterOrEqual(&traitSymbol))
-        TEST(!symbol2.afterOrEqual(&symbol1))
-        TEST(!symbol2.after(&symbol2))
+        TEST(traitSymbol.afterOrEqual(&traitSymbol));
+        TEST(symbol1.afterOrEqual(&traitSymbol));
+        TEST(!symbol2.afterOrEqual(&symbol1));
+        TEST(!symbol2.after(&symbol2));
+        TEST(getCommonBaseClass(&symbol1, &symbol2) == &traitSymbol);
+        TEST(getCommonBaseClass(&symbol2, &symbol1) == &traitSymbol);
+        TEST(getCommonBaseClass(&symbol2, &traitSymbol) == &traitSymbol);
+        return true;
+    }
+    else if (what == "lexer") {
+        std::cout << "Timer Started\n";
+        clock_t start = clock();
+        std::ifstream fin(args[0]);
+        std::string source((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        ErrorTable errorTable;
+        Lexer lexer(errorTable, source);
+        lexer.parse();
+        clock_t end = clock();
+        std::cout << "Time: " << (double) (end - start) / 1000 << "ms\n";
         return true;
     }
     else {

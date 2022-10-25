@@ -148,6 +148,7 @@ namespace Seserot {
             Number,
             Operator,
             NewLine,
+            Character
         };
         SourcePosition start, stop;
         Type type;

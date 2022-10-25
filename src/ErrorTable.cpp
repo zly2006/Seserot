@@ -23,7 +23,7 @@ void Seserot::ErrorTable::interrupt(const std::string &where) {
     std::cout << where << "\n"
               << "Errors: \n";
     for (auto &item: errors) {
-        std::cout << item.print() << "\n";
+        std::cout << item->toString() << "\n";
     }
     exit(0x50);
 }
