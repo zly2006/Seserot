@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <algorithm>
 #include <variant>
+#include <memory>
 
 #include "utils/sum_string.h"
 

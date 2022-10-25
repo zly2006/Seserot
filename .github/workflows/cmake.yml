@@ -18,6 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install GCC 10
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install gcc-10
+          sudo apt-get install g++-10
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 90
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 90
+
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
