@@ -17,9 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
-      - name: C/C++ code linter (clang-tidy, clang-format, and cppcheck)]
-        uses: ArtificialAmateur/cpp-linter-action@0.01
 
       - name: Install GCC 10
         run: |
