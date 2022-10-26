@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <utility>
 
 namespace Seserot::AST {
-    StringConstantNode::StringConstantNode(std::string content) : content(std::move(content)) {}
+    StringConstantNode::StringConstantNode(std::string content): content(std::move(content)) {}
 
     llvm::Value *StringConstantNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
         llvm::StringRef(this->content);
         return nullptr;
     }
-}
+}  // namespace Seserot::AST

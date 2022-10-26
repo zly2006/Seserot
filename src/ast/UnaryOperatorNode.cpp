@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot::AST {
     llvm::Value *UnaryOperatorNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
-        //irBuilder.CreateBinOp(llvm::Instruction::BinaryOps::Add);
+        // irBuilder.CreateBinOp(llvm::Instruction::BinaryOps::Add);
         irBuilder.CreateUnOp(llvm::Instruction::UnaryOps::UnaryOpsBegin, child->codeGen(irBuilder, context));
         return nullptr;
     }
@@ -28,4 +28,4 @@ namespace Seserot::AST {
     ASTNode::Actions UnaryOperatorNode::getAction() {
         return action;
     }
-}
+}  // namespace Seserot::AST

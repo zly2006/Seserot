@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_COMMON_H
 #define SESEROT_GEN0_COMMON_H
 
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace Seserot::utils {
-    template<class T, class P, class Container = std::vector<T>, class OutputContainer = std::vector<P>>
+    template <class T, class P, class Container = std::vector<T>, class OutputContainer = std::vector<P>>
     OutputContainer map(typename Container::itertor first, typename Container::itertor last, std::function<P(T)> func) {
         OutputContainer result;
         for (auto it = first; it != last; ++it) {
@@ -32,15 +32,15 @@ namespace Seserot::utils {
         }
         return result;
     }
-    template<class T>
+    template <class T>
     class return_type {
-    public:
+       public:
         using type = void;
     };
-    template<class T, class ...P>
+    template <class T, class... P>
     class return_type<T(P...)> {
-    public:
+       public:
         using type = T;
     };
-} // namespace Seserot::utils
-#endif //SESEROT_GEN0_COMMON_H
+}  // namespace Seserot::utils
+#endif  // SESEROT_GEN0_COMMON_H

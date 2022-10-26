@@ -33,6 +33,6 @@ namespace Seserot::AST {
         return irBuilder.CreateRet(value->codeGen(irBuilder, context));
     }
 
-    ReturnNode::ReturnNode(std::unique_ptr<ASTNode> &&value, MethodSymbol *methodSymbol)
-            : value(std::move(value)), methodSymbol(methodSymbol) {}
-}
+    ReturnNode::ReturnNode(std::unique_ptr<ASTNode> &&value, MethodSymbol *methodSymbol):
+            value(std::move(value)), methodSymbol(methodSymbol) {}
+}  // namespace Seserot::AST

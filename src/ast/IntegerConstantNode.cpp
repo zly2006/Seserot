@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "IntegerConstantNode.h"
+
 #include <llvm/IR/Constant.h>
 
 namespace Seserot::AST {
@@ -61,4 +62,4 @@ namespace Seserot::AST {
         this->v = llvm::APInt(1, v, false);
         inferredType = BuiltinSymbols::Boolean;
     }
-}
+}  // namespace Seserot::AST

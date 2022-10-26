@@ -19,16 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_FUNCTIONINVOKENODE_H
 #define SESEROT_GEN0_FUNCTIONINVOKENODE_H
 
-#include "ASTNode.h"
 #include "../Symbol.h"
-namespace Seserot::AST{
+#include "ASTNode.h"
+namespace Seserot::AST {
 
     /**
      * 表示函数调用<br/>
      * 不需要设置inferredType
      */
-    class FunctionInvokeNode : public ASTNode {
-    public:
+    class FunctionInvokeNode: public ASTNode {
+       public:
         MethodSymbol *methodSymbol;
 
         std::string name;
@@ -41,5 +41,5 @@ namespace Seserot::AST{
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
 
-}
-#endif //SESEROT_GEN0_FUNCTIONINVOKENODE_H
+}  // namespace Seserot::AST
+#endif  // SESEROT_GEN0_FUNCTIONINVOKENODE_H

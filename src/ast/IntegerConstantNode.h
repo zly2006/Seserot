@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_INTEGER_CONSTANT_NODE_H
 #define SESEROT_INTEGER_CONSTANT_NODE_H
 
-#include "ASTNode.h"
 #include "../BasicStructures.h"
+#include "ASTNode.h"
 
 namespace Seserot::AST {
-    class IntegerConstantNode : public ASTNode {
-    public:
+    class IntegerConstantNode: public ASTNode {
+       public:
         llvm::APInt v;
 
         explicit IntegerConstantNode(bool v);
@@ -47,5 +47,5 @@ namespace Seserot::AST {
 
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
-}
+}  // namespace Seserot::AST
 #endif

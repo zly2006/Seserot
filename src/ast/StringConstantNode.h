@@ -19,18 +19,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_STRINGCONSTANTNODE_H
 #define SESEROT_GEN0_STRINGCONSTANTNODE_H
 
-#include "ASTNode.h"
 #include <string>
 
+#include "ASTNode.h"
+
 namespace Seserot::AST {
-    class StringConstantNode : public ASTNode {
-    public:
+    class StringConstantNode: public ASTNode {
+       public:
         explicit StringConstantNode(std::string content);
 
         std::string content;
 
-        llvm::Value * codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
+        llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
-}
+}  // namespace Seserot::AST
 
-#endif //SESEROT_GEN0_STRINGCONSTANTNODE_H
+#endif  // SESEROT_GEN0_STRINGCONSTANTNODE_H

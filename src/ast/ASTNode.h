@@ -19,24 +19,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_AST_NODE_H
 #define SESEROT_AST_NODE_H
 
-#include <utility>
-#include <vector>
-#include <iostream>
-#include <string>
+#include <llvm/CodeGen/ValueTypes.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Value.h>
+
 #include <cstring>
+#include <iostream>
 #include <map>
 #include <memory>
-#include <llvm/CodeGen/ValueTypes.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constant.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/IRBuilder.h>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "../Symbol.h"
 #include "../SymbolTable.h"
 
 namespace Seserot::AST {
     class ASTNode {
-    public:
+       public:
         enum Actions {
             Unknown,
             NOOP,
@@ -81,6 +83,6 @@ namespace Seserot::AST {
             return ASTNode::Unknown;
         }
     };
-} // Seserot
+}  // namespace Seserot::AST
 
 #endif

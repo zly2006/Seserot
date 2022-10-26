@@ -19,18 +19,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_ACCESS_VARIABLE_NODE_H
 #define SESEROT_GEN0_ACCESS_VARIABLE_NODE_H
 
-#include "ASTNode.h"
 #include <memory>
 
+#include "ASTNode.h"
+
 namespace Seserot::AST {
-    class AccessVariableNode : public ASTNode {
-    public:
+    class AccessVariableNode: public ASTNode {
+       public:
         VariableSymbol *variableSymbol;
 
         explicit AccessVariableNode(VariableSymbol *variableSymbol);
 
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
-}
-
-#endif //SESEROT_GEN0_ACCESS_VARIABLE_NODE_H
+}  // namespace Seserot::AST
+#endif  // SESEROT_GEN0_ACCESS_VARIABLE_NODE_H

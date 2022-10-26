@@ -19,13 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_BINARY_OPERATOR_NODE_H
 #define SESEROT_GEN0_BINARY_OPERATOR_NODE_H
 
-#include "ASTNode.h"
 #include <memory>
 
-namespace Seserot::AST {
+#include "ASTNode.h"
 
-    class BinaryOperatorNode : public ASTNode {
-    public:
+namespace Seserot::AST {
+    class BinaryOperatorNode: public ASTNode {
+       public:
         std::unique_ptr<ASTNode> left;
         std::unique_ptr<ASTNode> right;
         Actions action;
@@ -35,6 +35,6 @@ namespace Seserot::AST {
         Actions getAction() override;
     };
 
-}
+}  // namespace Seserot::AST
 
-#endif //SESEROT_GEN0_BINARY_OPERATOR_NODE_H
+#endif  // SESEROT_GEN0_BINARY_OPERATOR_NODE_H

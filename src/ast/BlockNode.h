@@ -37,6 +37,6 @@ namespace Seserot::AST {
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
 
-}
+}  // namespace Seserot::AST
 
 #endif

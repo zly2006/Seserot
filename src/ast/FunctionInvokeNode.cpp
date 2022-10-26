@@ -26,8 +26,7 @@ llvm::Value *Seserot::AST::FunctionInvokeNode::codeGen(llvm::IRBuilder<> &irBuil
     return nullptr;
 }
 
-Seserot::AST::FunctionInvokeNode::FunctionInvokeNode(Seserot::MethodSymbol *methodSymbol) : methodSymbol(
-        methodSymbol) {
+Seserot::AST::FunctionInvokeNode::FunctionInvokeNode(Seserot::MethodSymbol *methodSymbol): methodSymbol(methodSymbol) {
     if (!methodSymbol->genericArgs.empty()) {
         throw std::runtime_error("Generic function cannot be invoked directly");
     }
