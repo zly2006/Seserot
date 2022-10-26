@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot {
     class ByteCodeWriter {
-       public:
+    public:
         static int checksum(const char *binary, size_t len);
 
         static std::ostream &writeInt(std::ostream &ostream, int value);

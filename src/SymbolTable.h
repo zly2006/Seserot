@@ -29,12 +29,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot {
     class SymbolTable {
-       private:
+    private:
         Scope *root;
 
         NamespaceSymbol *currentNamespace;
 
-       public:
+    public:
         /**
          * @brief Construct a new Symbol Table object. If root is not nullptr,
          * ths created table will import builtin symbols.

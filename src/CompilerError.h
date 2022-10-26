@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace Seserot {
 
     class CompilerError {
-       public:
+    public:
         SourcePosition where;
         size_t code;
         std::string message;
@@ -40,7 +40,7 @@ namespace Seserot {
     };
 
     class CompilerWarning: public CompilerError {
-       public:
+    public:
         explicit CompilerWarning(SourcePosition where, size_t code, std::string message, std::string category = "");
 
         std::string toString() override;

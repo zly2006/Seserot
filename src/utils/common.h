@@ -34,12 +34,12 @@ namespace Seserot::utils {
     }
     template <class T>
     class return_type {
-       public:
+    public:
         using type = void;
     };
     template <class T, class... P>
     class return_type<T(P...)> {
-       public:
+    public:
         using type = T;
     };
 }  // namespace Seserot::utils

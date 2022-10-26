@@ -40,7 +40,7 @@ namespace Seserot {
     class Parser;
 
     class AbstractSyntaxTreeNode {
-       public:
+    public:
         AbstractSyntaxTreeNode();
 
         AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode &node);

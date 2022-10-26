@@ -30,7 +30,7 @@ namespace Seserot::AST {
     class IfElseNode: public ASTNode {
         friend bool ::test(const std::string &what, const std::span<std::string> &args);
 
-       public:
+    public:
         std::unique_ptr<ASTNode> condition;
         std::unique_ptr<ASTNode> thenBlock;
         std::unique_ptr<ASTNode> elseBlock;

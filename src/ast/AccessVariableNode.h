@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot::AST {
     class AccessVariableNode: public ASTNode {
-       public:
+    public:
         VariableSymbol *variableSymbol;
 
         explicit AccessVariableNode(VariableSymbol *variableSymbol);

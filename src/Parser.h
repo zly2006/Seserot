@@ -45,12 +45,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot {
     class Parser {
-       private:
+    private:
         friend bool ::test(const std::string &what, const std::span<std::string> &args);
 
         using token_iter = std::vector<Token>::iterator;
 
-       public:
+    public:
         Parser(std::vector<Token> tokens, ErrorTable &errorTable);
 
         void parse();
@@ -82,7 +82,7 @@ namespace Seserot {
 
         void setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module);
 
-       private:
+    private:
         std::unique_ptr<AST::ASTNode> parseNext(token_iter &it);
 
         void importSymbols(const std::vector<std::string_view> &symbols);

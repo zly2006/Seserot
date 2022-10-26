@@ -28,7 +28,7 @@ namespace Seserot::AST {
      * 不需要设置inferredType
      */
     class FunctionInvokeNode: public ASTNode {
-       public:
+    public:
         MethodSymbol *methodSymbol;
 
         std::string name;

@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ASTNode.h"
 
 namespace Seserot::AST {
-    class FloatingConstantNode : public ASTNode {
+    class FloatingConstantNode: public ASTNode {
     public:
         double v;
 

@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot::AST {
     class BinaryOperatorNode: public ASTNode {
-       public:
+    public:
         std::unique_ptr<ASTNode> left;
         std::unique_ptr<ASTNode> right;
         Actions action;

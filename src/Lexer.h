@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace Seserot {
 
     class Lexer {
-       public:
+    public:
         std::vector<Token> tokens;
 
         Lexer(ErrorTable &errorTable, std::string_view fileContent): errorTable(errorTable), fileContent(fileContent) {
@@ -59,7 +59,7 @@ namespace Seserot {
 
         void parse();
 
-       private:
+    private:
         const std::vector<std::string> operators = {
                 "<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "&&", "||", "!=", "==", "..", "=>", "->",
                 "--", "++", "<<", ">>",  // generic
