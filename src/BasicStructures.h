@@ -19,15 +19,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_BASIC_STRUCTURES_H
 #define SESEROT_GEN0_BASIC_STRUCTURES_H
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
-#include <vector>
-#include <cassert>
-#include <optional>
-#include <cmath>
-#include <algorithm>
 #include <variant>
-#include <memory>
+#include <vector>
 
 #include "utils/sum_string.h"
 
@@ -43,6 +43,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 int main(int, char **, char **);
 
 namespace Seserot {
+    class Symbol;
+
     using int64 = long long;
     using uint64 = unsigned long long;
     using int32 = int;
@@ -55,7 +57,7 @@ namespace Seserot {
     struct SourcePosition {
         std::string file;
 
-        SourcePosition(int _line, int _column) : line(_line), column(_column) {}
+        SourcePosition(int _line, int _column): line(_line), column(_column) {}
 
         SourcePosition() {
             line = 0;
@@ -63,11 +65,16 @@ namespace Seserot {
         }
 
         [[nodiscard]] int compare(const SourcePosition &another) const {
-            if (line > another.line) return 1;
-            else if (line < another.line) return -1;
-            else if (column > another.column) return 1;
-            else if (column < another.column) return -1;
-            else return 0;
+            if (line > another.line)
+                return 1;
+            else if (line < another.line)
+                return -1;
+            else if (column > another.column)
+                return 1;
+            else if (column < another.column)
+                return -1;
+            else
+                return 0;
         }
 
         bool operator<(const SourcePosition &another) const {
@@ -98,8 +105,8 @@ namespace Seserot {
     };
 
     struct Scope {
-        Scope(Scope *father, SourcePosition start, SourcePosition stop) : father(father), start(std::move(start)),
-                                                                          stop(std::move(stop)) {}
+        Scope(Scope *father, SourcePosition start, SourcePosition stop):
+                father(father), start(std::move(start)), stop(std::move(stop)) {}
 
         bool inside(Scope *scope) {
             assert(scope != nullptr);
@@ -115,21 +122,19 @@ namespace Seserot {
             return p;
         }
 
-        [[nodiscard]] std::string getSignature() const { // NOLINT(misc-no-recursion)
+        [[nodiscard]] std::string getSignature() const {  // NOLINT(misc-no-recursion)
             assert(father != this);
             if (father != nullptr) {
                 return father->getSignature() + "$" + std::to_string(id);
-            }
-            else {
+            } else {
                 return std::to_string(id);
             }
         };
 
         Scope *father = nullptr;
         std::vector<Scope *> children;
-        size_t id;
+        size_t id = 0;
         SourcePosition start, stop;
-
 
         ~Scope() {
             for (auto &item: children) {
@@ -138,8 +143,8 @@ namespace Seserot {
         }
     };
 
-    struct FileScope : Scope {
-        FileScope() : Scope(nullptr, SourcePosition(0, 0), SourcePosition(0, 0)) {}
+    struct FileScope: Scope {
+        FileScope(): Scope(nullptr, SourcePosition(0, 0), SourcePosition(0, 0)) {}
     };
 
     struct Token {
@@ -154,6 +159,7 @@ namespace Seserot {
         SourcePosition start, stop;
         Type type;
         std::string content;
+        Symbol *ref = nullptr;
         enum ParsedType {
             Ready,
             Statement,
@@ -161,5 +167,5 @@ namespace Seserot {
         };
         ParsedType parsed = Ready;
     };
-}
-#endif //SESEROT_GEN0_BASIC_STRUCTURES_H
+}  // namespace Seserot
+#endif  // SESEROT_GEN0_BASIC_STRUCTURES_H

@@ -19,21 +19,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_SYMBOL_TABLE_H
 #define SESEROT_GEN0_SYMBOL_TABLE_H
 
-#include <vector>
 #include <map>
-#include <unordered_map>
 #include <string>
 #include <string_view>
-#include "Symbol.h"
+#include <unordered_map>
+#include <vector>
 
+#include "Symbol.h"
 
 namespace Seserot {
     class SymbolTable {
-    private:
+       private:
         Scope *root;
 
         NamespaceSymbol *currentNamespace;
-    public:
+
+       public:
         /**
          * @brief Construct a new Symbol Table object. If root is not nullptr,
          * ths created table will import builtin symbols.
@@ -76,7 +77,7 @@ namespace Seserot {
         extern ClassSymbol *Class;
         extern ClassSymbol *Enum;
         extern ClassSymbol *Function;
-    }
-} // Seserot
+    }  // namespace BuiltinSymbols
+}  // namespace Seserot
 
-#endif //SESEROT_GEN0_SYMBOL_TABLE_H
+#endif  // SESEROT_GEN0_SYMBOL_TABLE_H

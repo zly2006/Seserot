@@ -1,4 +1,5 @@
 # 编译步骤
+
 1. 使用lexer生成tokens
 2. 使用parser::scan生成符号表
 3. 解析符号引用，生成全部的signature，完成语义分析、类型推导
@@ -7,6 +8,7 @@
 6. 生成目标代码
 
 # Lexer
+
 Lexer已完成，如有bug请参与讨论或者提交issue、pull request
 
 # 语法分析

@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Seserot::AST {
     llvm::Value *AccessVariableNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
+        //irBuilder.CreateAlloca()
+        //irBuilder.CreateLoad(/* TODO */);
         return nullptr;
     }
 

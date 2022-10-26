@@ -19,21 +19,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_LEXER_H
 #define SESEROT_GEN0_LEXER_H
 
-#include <string>
 #include <set>
+#include <string>
+
 #include "BasicStructures.h"
 #include "ErrorTable.h"
 
 namespace Seserot {
 
     class Lexer {
-    public:
-
+       public:
         std::vector<Token> tokens;
 
-        Lexer(ErrorTable &errorTable, std::string_view fileContent) :
-                errorTable(errorTable),
-                fileContent(fileContent) {
+        Lexer(ErrorTable &errorTable, std::string_view fileContent): errorTable(errorTable), fileContent(fileContent) {
             cursor = 0;
             start = 0;
         }
@@ -61,18 +59,18 @@ namespace Seserot {
 
         void parse();
 
-    private:
+       private:
         const std::vector<std::string> operators = {
-                "<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
-                "&&", "||", "!=", "==", "..", "=>", "->", "--", "++",
-                "<<", ">>", //generic type arg
-                "+", "-", "*", "/", "%", ".", "<", ">", "!", "&", "|", "~", "=", ",", ":", "?", ";",
-                "(", ")", "{", "}", "[", "]",
-                "#" // unused
+                "<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "&&", "||", "!=", "==", "..", "=>", "->",
+                "--", "++", "<<", ">>",  // generic
+                                         // type arg
+                "+", "-", "*", "/", "%", ".", "<", ">", "!", "&", "|", "~", "=", ",", ":", "?", ";", "(", ")", "{", "}",
+                "[", "]",
+                "#"  // unused
         };
         const std::set<char> numberComponents = {
-                '.', 'e', 'E', 'l', 'L', 'u', 'U', // dot & suffix
-                'x', 'X', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F' // Hex
+                '.', 'e', 'E', 'l', 'L', 'u', 'U',                                    // dot & suffix
+                'x', 'X', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E', 'f', 'F'  // Hex
         };
 
         State parseNextChar();
@@ -84,6 +82,6 @@ namespace Seserot {
         void moveCursor(size_t = 1);
     };
 
-} // Seserot
+}  // namespace Seserot
 
-#endif //SESEROT_GEN0_LEXER_H
+#endif  // SESEROT_GEN0_LEXER_H

@@ -107,7 +107,7 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         Parser parser(lexer.tokens, errorTable);
         parser.scan();
         auto iterator = parser.tokens.begin();
-        auto ifExpr = parser.parseIf(iterator);
+        auto ifExpr = parser.parseNext(iterator);
         auto *ifNode = dynamic_cast<AST::IfElseNode *>(ifExpr.get());
         TEST(ifExpr != nullptr);
         auto *integer = dynamic_cast<AST::IntegerConstantNode *>(ifNode->condition.get());

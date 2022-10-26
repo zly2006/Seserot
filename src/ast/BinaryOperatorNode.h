@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ASTNode.h"
 #include <memory>
 
-namespace Seserot::AST{
+namespace Seserot::AST {
 
     class BinaryOperatorNode : public ASTNode {
     public:
@@ -35,6 +35,6 @@ namespace Seserot::AST{
         Actions getAction() override;
     };
 
-} // AST
+}
 
 #endif //SESEROT_GEN0_BINARY_OPERATOR_NODE_H

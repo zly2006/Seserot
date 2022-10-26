@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "Lexer.h"
+
 #include <regex>
 
 namespace Seserot {
@@ -29,110 +30,79 @@ namespace Seserot {
             if (fileContent[cursor] == '\\') {
                 moveCursor(2);
                 return String;
-            }
-            else if (fileContent[cursor] == '\"') {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Literal, parseLiteral(fileContent.substr(start, cursor - start))
-                });
+            } else if (fileContent[cursor] == '\"') {
+                tokens.push_back(Token{startPosition, position, Token::Literal,
+                                       parseLiteral(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
-            }
-            else if (fileContent[cursor] == '\n') {
+            } else if (fileContent[cursor] == '\n') {
                 errorTable.interrupt("Unexpected new line in string.");
                 return FatalError;
-            }
-            else {
+            } else {
                 moveCursor();
                 return String;
             }
-        }
-        else if (state == Character) {
+        } else if (state == Character) {
             if (fileContent[cursor] == '\\') {
                 moveCursor(2);
                 return Character;
-            }
-            else if (fileContent[cursor] == '\'') {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Literal, parseLiteral(fileContent.substr(start, cursor - start))
-                });
+            } else if (fileContent[cursor] == '\'') {
+                tokens.push_back(Token{startPosition, position, Token::Literal,
+                                       parseLiteral(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
-            }
-            else if (fileContent[cursor] == '\n') {
+            } else if (fileContent[cursor] == '\n') {
                 errorTable.interrupt("Unexpected new line in character.");
                 return FatalError;
-            }
-            else {
+            } else {
                 moveCursor();
                 return Character;
             }
-        }
-        else if (state == MultiLineString) {
+        } else if (state == MultiLineString) {
             if (fileContent[cursor] == '\\') {
                 moveCursor(2);
                 return Character;
-            }
-            else if (fileContent[cursor] == '\'') {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Character, parseLiteral(fileContent.substr(start, cursor - start))
-                });
+            } else if (fileContent[cursor] == '\'') {
+                tokens.push_back(Token{startPosition, position, Token::Character,
+                                       parseLiteral(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
-            }
-            else {
+            } else {
                 moveCursor();
                 return Character;
             }
-        }
-        else if (state == MultiLineString) {
-            if (fileContent.length() > cursor + 2
-                && fileContent[cursor + 0] == '\"'
-                && fileContent[cursor + 1] == '\"'
-                && fileContent[cursor + 2] == '\"') {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Literal, std::string(fileContent.substr(start, cursor - start))
-                });
+        } else if (state == MultiLineString) {
+            if (fileContent.length() > cursor + 2 && fileContent[cursor + 0] == '\"' &&
+                fileContent[cursor + 1] == '\"' && fileContent[cursor + 2] == '\"') {
+                tokens.push_back(Token{startPosition, position, Token::Literal,
+                                       std::string(fileContent.substr(start, cursor - start))});
                 moveCursor(3);
                 return Ready;
-            }
-            else {
+            } else {
                 moveCursor();
                 return MultiLineString;
             }
-        }
-        else if (state == Comment) {
+        } else if (state == Comment) {
             moveCursor();
             if (fileContent[cursor] == '\n') {
                 return Ready;
-            }
-            else {
+            } else {
                 return Comment;
             }
-        }
-        else if (state == MultiLineComment) {
-            if (fileContent[cursor] == '*'
-                && fileContent.length() > cursor + 1
-                && fileContent[cursor + 1] == '/') {
+        } else if (state == MultiLineComment) {
+            if (fileContent[cursor] == '*' && fileContent.length() > cursor + 1 && fileContent[cursor + 1] == '/') {
                 moveCursor(2);
                 return Ready;
-            }
-            else {
+            } else {
                 moveCursor();
                 return MultiLineComment;
             }
-        }
-        else if (state == Number) {
+        } else if (state == Number) {
             if (isdigit(fileContent[cursor])) {
                 moveCursor();
                 return Number;
-            }
-            else if (numberComponents.count(fileContent[cursor])
-                     && fileContent.length() > cursor + 1
-                     && isdigit(fileContent[cursor + 1])) {
+            } else if (numberComponents.count(fileContent[cursor]) && fileContent.length() > cursor + 1 &&
+                       isdigit(fileContent[cursor + 1])) {
                 /* strict
                  * allowed:
                  * 1.0
@@ -141,124 +111,92 @@ namespace Seserot {
                  * .1
                  * 1,
                  */
-                moveCursor(2); // skip the digit char after '.'
+                moveCursor(2);  // skip the digit char after '.'
                 return Number;
-            }
-            else {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Type::Number, std::string(fileContent.substr(start, cursor - start))
-                });
+            } else {
+                tokens.push_back(Token{startPosition, position, Token::Type::Number,
+                                       std::string(fileContent.substr(start, cursor - start))});
                 return Ready;
             }
-        }
-        else if (state == Identifier) {
-            if (isalpha(fileContent[cursor])
-                || fileContent[cursor] == '_'
-                || isdigit(fileContent[cursor])) {
+        } else if (state == Identifier) {
+            if (isalpha(fileContent[cursor]) || fileContent[cursor] == '_' || isdigit(fileContent[cursor])) {
                 moveCursor();
                 return Identifier;
-            }
-            else {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Type::Name, std::string(fileContent.substr(start, cursor - start))
-                });
+            } else {
+                tokens.push_back(Token{startPosition, position, Token::Type::Name,
+                                       std::string(fileContent.substr(start, cursor - start))});
                 return Ready;
             }
-        }
-        else if (state == WideIdentifier) {
+        } else if (state == WideIdentifier) {
             if (fileContent[cursor] == '`') {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Type::Name, std::string(fileContent.substr(start, cursor - start))
-                });
+                tokens.push_back(Token{startPosition, position, Token::Type::Name,
+                                       std::string(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
-            }
-            else {
+            } else {
                 moveCursor();
                 return WideIdentifier;
             }
-        }
-        else if (state == Ready) {
-            if (fileContent[cursor] == '\t'
-                || fileContent[cursor] == ' ') {
+        } else if (state == Ready) {
+            if (fileContent[cursor] == '\t' || fileContent[cursor] == ' ') {
                 moveCursor();
                 return Ready;
-            }
-            else if (fileContent[cursor] == '\n') {
+            } else if (fileContent[cursor] == '\n') {
                 syncStart();
                 moveCursor();
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::NewLine
-                });
+                tokens.push_back(Token{startPosition, position, Token::NewLine});
                 return Ready;
             }
             if (fileContent[cursor] == '\"') {
-                if (fileContent.length() > cursor + 2
-                    && fileContent[cursor + 1] == '\"'
-                    && fileContent[cursor + 2] == '\"') {
+                if (fileContent.length() > cursor + 2 && fileContent[cursor + 1] == '\"' &&
+                    fileContent[cursor + 2] == '\"') {
                     moveCursor(3);
                     syncStart();
                     return MultiLineString;
-                }
-                else {
+                } else {
                     moveCursor();
                     syncStart();
                     return String;
                 }
-            }
-            else if (fileContent[cursor] == '\'') {
+            } else if (fileContent[cursor] == '\'') {
                 moveCursor();
                 syncStart();
                 return Character;
-            }
-            else if (fileContent[cursor] == '/' && fileContent.length() > cursor + 1) {
+            } else if (fileContent[cursor] == '/' && fileContent.length() > cursor + 1) {
                 if (fileContent[cursor + 1] == '/') {
                     moveCursor(2);
                     return Comment;
-                }
-                else if (fileContent[cursor + 1] == '*') {
+                } else if (fileContent[cursor + 1] == '*') {
                     moveCursor(2);
                     return MultiLineComment;
                 }
-            }
-            else if (isdigit(fileContent[cursor])) {
+            } else if (isdigit(fileContent[cursor])) {
                 syncStart();
                 moveCursor();
                 return Number;
-            }
-            else if (isalpha(fileContent[cursor]) || fileContent[cursor] == '_') {
+            } else if (isalpha(fileContent[cursor]) || fileContent[cursor] == '_') {
                 syncStart();
                 moveCursor();
                 return Identifier;
-            }
-            else if (fileContent[cursor] == '`') {
+            } else if (fileContent[cursor] == '`') {
                 moveCursor();
                 syncStart();
                 return WideIdentifier;
-            }
-            else {
+            } else {
                 for (const auto &op: operators) {
                     if (fileContent.length() >= op.length() + cursor) {
                         if (fileContent.substr(cursor, op.length()) == op) {
                             syncStart();
                             moveCursor(op.length());
-                            tokens.push_back(Token{
-                                    startPosition, position,
-                                    Token::Operator, std::string(fileContent.substr(start, cursor - start))
-                            });
+                            tokens.push_back(Token{startPosition, position, Token::Operator,
+                                                   std::string(fileContent.substr(start, cursor - start))});
                             return Ready;
                         }
                     }
                 }
                 // todo: error code
                 errorTable.errors.push_back(std::make_unique<CompilerWarning>(
-                        startPosition, 0,
-                        "Unknown character: " + std::string(1, fileContent[cursor])
-                ));
+                        startPosition, 0, "Unknown character: " + std::string(1, fileContent[cursor])));
                 moveCursor();
                 return Ready;
             }
@@ -324,12 +262,12 @@ namespace Seserot {
                                     j -= 'a';
                                 else if (j <= 'F' && j >= 'A')
                                     j -= 'A';
-                                else errorTable.interrupt();
+                                else
+                                    errorTable.interrupt();
                             }
                             unsigned char c = a[0] << 4 | a[1];
-                            string.push_back((char) c);
-                        }
-                        else {
+                            string.push_back((char)c);
+                        } else {
                             errorTable.interrupt("parse literal: HEX");
                         }
                         break;
@@ -337,15 +275,13 @@ namespace Seserot {
                     case 'u': {
                         if (i + 4 < content.length()) {
                             errorTable.interrupt("TODO");
-                        }
-                        else {
+                        } else {
                             errorTable.interrupt("parse literal: Unicode");
                         }
                         break;
                     }
                 }
-            }
-            else {
+            } else {
                 string.push_back(content[i]);
             }
         }
@@ -357,8 +293,8 @@ namespace Seserot {
             if (fileContent[cursor] == '\n') {
                 position.line++;
                 position.column = 0;
-            }
-            else position.column++;
+            } else
+                position.column++;
             cursor++;
         }
     }
@@ -372,19 +308,14 @@ namespace Seserot {
                 Ready,
                 Identifier,
         };
-        if (state != Ready) { // 还需要做一下收尾
+        if (state != Ready) {  // 还需要做一下收尾
             if (state == Number) {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Type::Number, std::string(fileContent.substr(start, cursor - start))
-                });
+                tokens.push_back(Token{startPosition, position, Token::Type::Number,
+                                       std::string(fileContent.substr(start, cursor - start))});
                 state = Ready;
-            }
-            else if (state == Identifier) {
-                tokens.push_back(Token{
-                        startPosition, position,
-                        Token::Type::Name, std::string(fileContent.substr(start, cursor - start))
-                });
+            } else if (state == Identifier) {
+                tokens.push_back(Token{startPosition, position, Token::Type::Name,
+                                       std::string(fileContent.substr(start, cursor - start))});
                 state = Ready;
             }
         }
@@ -406,4 +337,4 @@ namespace Seserot {
             errorTable.interrupt();
         }
     }
-} // Seserot
+}  // namespace Seserot

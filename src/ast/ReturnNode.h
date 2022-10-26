@@ -16,15 +16,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "ErrorTable.h"
+#ifndef SESEROT_GEN0_RETURNNODE_H
+#define SESEROT_GEN0_RETURNNODE_H
 
-#include <iostream>
+#include "ASTNode.h"
 
-void Seserot::ErrorTable::interrupt(const std::string &where) {
-    std::cout << where << "\n"
-              << "Errors: \n";
-    for (auto &item: errors) {
-        std::cout << item->toString() << "\n";
-    }
-    exit(0x50);
+namespace Seserot::AST {
+    class ReturnNode: public ASTNode {
+    public:
+        std::unique_ptr<ASTNode> value;
+        MethodSymbol *methodSymbol;
+
+        explicit ReturnNode(std::unique_ptr<ASTNode> &&value, MethodSymbol *methodSymbol);
+
+        llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
+    };
 }
+
+#endif //SESEROT_GEN0_RETURNNODE_H

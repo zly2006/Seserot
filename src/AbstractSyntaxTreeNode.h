@@ -19,17 +19,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
 #define SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
 
+#include <llvm/CodeGen/ValueTypes.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Value.h>
+
+#include <cstring>
+#include <iostream>
+#include <map>
+#include <string>
 #include <utility>
 #include <vector>
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <map>
-#include <llvm/CodeGen/ValueTypes.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constant.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/IRBuilder.h>
+
 #include "ByteCodeWriter.h"
 #include "Symbol.h"
 
@@ -38,7 +40,7 @@ namespace Seserot {
     class Parser;
 
     class AbstractSyntaxTreeNode {
-    public:
+       public:
         AbstractSyntaxTreeNode();
 
         AbstractSyntaxTreeNode(const AbstractSyntaxTreeNode &node);
@@ -103,6 +105,6 @@ namespace Seserot {
         ClassSymbol *typeInferred = nullptr;
     };
 
-} // Seserot
+}  // namespace Seserot
 
-#endif //SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H
+#endif  // SESEROT_GEN0_ABSTRACT_SYNTAX_TREE_NODE_H

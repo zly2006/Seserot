@@ -17,29 +17,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "Parser.h"
-#include "Symbol.h"
-#include "utils/sum_string.h"
-#include "utils/ByteOrder.h"
-#include "utils/common.h"
-#include "ast/ASTNode.h"
-#include "ast/IfElseNode.h"
-#include "ast/IntegerConstantNode.h"
-#include "ast/FloatingConstantNode.h"
-#include "ast/UnaryOperatorNode.h"
-#include "ast/FunctionInvokeNode.h"
-#include "ast/FloatingConstantNode.h"
-#include "ast/StringConstantNode.h"
-#include "ast/BinaryOperatorNode.h"
-#include "ast/AccessVariableNode.h"
-#include "SymbolTable.h"
 
-#include <utility>
-#include <stack>
-#include <variant>
-#include <cmath>
-#include <sstream>
 #include <any>
 #include <cmath>
+#include <sstream>
+#include <stack>
+#include <utility>
+#include <variant>
+
+#include "Symbol.h"
+#include "SymbolTable.h"
+#include "ast/ASTNode.h"
+#include "ast/AccessVariableNode.h"
+#include "ast/BinaryOperatorNode.h"
+#include "ast/BlockNode.h"
+#include "ast/FloatingConstantNode.h"
+#include "ast/FunctionInvokeNode.h"
+#include "ast/IfElseNode.h"
+#include "ast/IntegerConstantNode.h"
+#include "ast/ReturnNode.h"
+#include "ast/StringConstantNode.h"
+#include "ast/UnaryOperatorNode.h"
+#include "utils/ByteOrder.h"
+#include "utils/common.h"
+#include "utils/sum_string.h"
 
 namespace Seserot {
     void Parser::scan() {
@@ -56,9 +57,8 @@ namespace Seserot {
         // 作用：结束当前scope，检查symbol scope并整理currentFatherSymbol
         auto endScope = [&](Token &thisToken) {
             if (currentScope == nullptr) {
-                errorTable.errors.emplace_back(std::make_unique<CompilerError>(
-                        thisToken.start, 0, "unexpected \'}\'"
-                ));//todo
+                // todo: 分配错误码
+                appendError(0, "Unexpected \'}\'", thisToken.start);
                 errorTable.interrupt();
                 return;
             }
@@ -76,12 +76,13 @@ namespace Seserot {
                 // 处理scope
                 if (tokens[i].content == "{") {
                     newScope(tokens[i]);
-                }
-                else if (tokens[i].content == "}") {
+                } else if (tokens[i].content == "}") {
                     endScope(tokens[i]);
+                } else if (tokens[i].content == "->") {
+                    // lambda
+                    // todo
                 }
-            }
-            else if (tokens[i].type == Token::Name) {
+            } else if (tokens[i].type == Token::Name) {
                 token2scope[&tokens[i]] = currentScope;
                 if (tokens[i].content == "namespace") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
@@ -103,19 +104,18 @@ namespace Seserot {
                         newScope(tokens[i]);
                         ns->childScope = currentScope;
                         break;
-                    } // 华风夏韵，洛水天依。
+                    }  // 华风夏韵，洛水天依。
                     else {
                         ns->childScope = &root;
                     }
                     currentFatherSymbol.push(ns);
-                }
-                else if (tokens[i].content == "class") {
+                } else if (tokens[i].content == "class") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                        errorTable.errors.emplace_back(std::make_unique<CompilerError>
-                                                               (tokens[i].stop, 2012, "class name not found."));
+                        errorTable.errors.emplace_back(
+                                std::make_unique<CompilerError>(tokens[i].stop, 2012, "class name not found."));
                         errorTable.interrupt("scanning classes");
                     }
-                    auto mod = parseModifiers(tokens.begin() + (long) i);
+                    auto mod = parseModifiers(tokens.begin() + (long)i);
                     if (!(mod & Inner)) {
                         mod = static_cast<Modifiers>(mod | Static);
                     }
@@ -124,18 +124,16 @@ namespace Seserot {
                     auto *symbol = new ClassSymbol(currentScope, name, {}, nullptr, mod, {});
                     if (auto *pf = currentNamespaceSymbol(currentFatherSymbol.top()); pf != nullptr) {
                         symbol->signature = pf->signature + "::" + name;
-                    }
-                    else {
+                    } else {
                         symbol->signature = "::" + name;
                     }
                     if (!symbolTable.emplace(std::unique_ptr<ClassSymbol>(symbol))) {
-                        errorTable.errors.emplace_back(std::make_unique<CompilerError>
-                                                               (tokens[i].start, 2503,
-                                                                "class definition already exists."));
+                        errorTable.errors.emplace_back(std::make_unique<CompilerError>(
+                                tokens[i].start, 2503, "class definition already exists."));
                         errorTable.interrupt("scanning classes");
                     }
                     while (true) {
-                        i++;//todo
+                        i++;  // todo
                         if (tokens[i].content == "{" && tokens[i].type == Token::Operator) {
                             newScope(tokens[i]);
                             symbol->childScope = currentScope;
@@ -143,52 +141,50 @@ namespace Seserot {
                             break;
                         }
                     }
-                }
-                else if (tokens[i].content == "function") {
+                } else if (tokens[i].content == "function") {
                     if (i + 1 >= tokens.size() || tokens[i + 1].type != Token::Name) {
-                        errorTable.errors.emplace_back(std::make_unique<CompilerError>(
-                                tokens[i].stop, 2013, "method name not found."));
+                        errorTable.errors.emplace_back(
+                                std::make_unique<CompilerError>(tokens[i].stop, 2013, "method name not found."));
                         errorTable.interrupt("scanning methods");
                     }
-                    Modifiers mod = parseModifiers(tokens.begin() + (long) i);
+                    Modifiers mod = parseModifiers(tokens.begin() + (long)i);
                     i++;
                     std::string name = tokens[i].content;
                     if (currentFatherSymbol.top() != rootNamespace) {
                         currentFatherSymbol.top()->name + "." + name;
                     }
-                    auto *methodSymbol = new MethodSymbol(nullptr, name, mod,
-                                                          {}, {}, nullptr);
+                    auto *methodSymbol = new MethodSymbol(nullptr, name, mod, {}, {}, nullptr);
                     tokens[i].parsed = Token::Statement;
                     ClassSymbol *father = currentClassSymbol(currentFatherSymbol.top());
                     methodSymbol->father = father;
                     if (father != nullptr && father->modifiers & Static) {
                         if (!(methodSymbol->modifiers & Static)) {
-                            errorTable.errors.emplace_back(std::make_unique<CompilerError>(
-                                    tokens[i].start, 0, ""));//todo
+                            errorTable.errors.emplace_back(
+                                    std::make_unique<CompilerError>(tokens[i].start, 0, ""));  // todo
                         }
                     }
                     if (i != tokens.size() - 1) {
                         if (tokens[i].type == Token::Operator && tokens[i].content == "<") {
                             Token &genericName = read(i);
                             if (genericName.type != Token::Name) {
-                                //todo: error code
+                                // todo: error code
                                 appendError(0, "generic arg name expected", genericName.start);
                                 errorTable.interrupt();
                             }
-                            methodSymbol->genericArgs.push_back
-                                    (ClassSymbol(nullptr, genericName.content, {}, nullptr, Modifiers::None, {}));
+                            methodSymbol->genericArgs.push_back(
+                                    ClassSymbol(nullptr, genericName.content, {}, nullptr, Modifiers::None, {}));
                         }
                     }
                     Token &args_optional = read(i);
                     if (args_optional.type == Token::Operator && args_optional.content == "(") {
-                        //todo
-                        while (read(i).content != ")");
+                        // todo
+                        while (read(i).content != ")")
+                            ;
                     }
                     Token &where_optional = read(i);
                     if (where_optional.type == Token::Name && where_optional.content == "where") {
-                        //todo
-                    }
-                    else if (where_optional.type == Token::Operator && where_optional.content == "{") {
+                        // todo
+                    } else if (where_optional.type == Token::Operator && where_optional.content == "{") {
                         newScope(tokens[i]);
                         methodSymbol->childScope = currentScope;
                         currentFatherSymbol.push(methodSymbol);
@@ -202,40 +198,51 @@ namespace Seserot {
                         appendError(2504, "method definition already exists", tokens[i].start);
                         errorTable.interrupt("scanning methods");
                     }
-                }
-                else if (tokens[i].content == "var" || tokens[i].content == "val") {
-                    auto mod = parseModifiers(tokens.begin() + (long) i,
-                                              tokens[i].content == "var" ? Mutable : None);
+                } else if (tokens[i].content == "var" || tokens[i].content == "val") {
+                    auto mod = parseModifiers(tokens.begin() + (long)i, tokens[i].content == "var" ? Mutable : None);
                     auto &t = read(i);
                     auto *classSymbol = currentClassSymbol(currentFatherSymbol.top());
                     auto *methodSymbol = currentMethodSymbol(currentFatherSymbol.top());
                     if (tokens[i].content == "val") {
                         if (mod & Mutable) {
-                            //todo: 分配错误码
+                            // todo: 分配错误码
                             appendError(0, "val cannot be mutable", tokens[i].start);
                         }
-                    } // val
+                    }  // val
                     if (methodSymbol != nullptr) {
                         auto *pItem = new VariableSymbol(currentScope, t.content, classSymbol, mod, nullptr);
                         if (!symbolTable.emplace(std::unique_ptr<VariableSymbol>(pItem))) {
-                            //todo: 分配错误码
+                            // todo: 分配错误码
                             std::string msg;
                             msg += "variable ";
                             msg += t.content;
                             msg += " already exists.";
-                            errorTable.errors.emplace_back(std::make_unique<CompilerError>
-                                                                   (t.start, 0, msg.c_str()));
+                            errorTable.errors.emplace_back(std::make_unique<CompilerError>(t.start, 0, msg.c_str()));
                         }
-                    }
-                    else if (classSymbol == currentFatherSymbol.top()) {
+                    } else if (classSymbol == currentFatherSymbol.top()) {
                         auto *pItem = new PropertySymbol(currentScope, t.content, classSymbol, mod);
-                        if (!symbolTable.emplace(std::unique_ptr<PropertySymbol>(pItem))) {
-
-                        }
-                    }
-                    else {
-                        //todo: 分配错误码
+                        if (!symbolTable.emplace(std::unique_ptr<PropertySymbol>(pItem))) {}
+                    } else {
+                        // todo: 分配错误码
                         appendError(0, "variable definition must be in class or method", t.start);
+                    }
+                } else if (tokens[i].content == "import") {
+                } else if (tokens[i].content == "return") {
+                    if (currentMethodSymbol(currentFatherSymbol.top()) == nullptr) {
+                        appendError(0, "return statement must be in method", tokens[i].start);
+                    } else {
+                        tokens[i].parsed = Token::Statement;
+                        if (i + 1 != tokens.size() && tokens[i + 1].content == "@" &&
+                            tokens[i + 1].type == Token::Operator) {
+                            i++;
+                            auto &t = read(i);
+                            if (t.type != Token::Name) {
+                                appendError(0, "name expected", t.start);
+                            } else {
+                                tokens[i].parsed = Token::Statement;
+                                reference.emplace(&tokens[i], currentMethodSymbol(currentFatherSymbol.top()));
+                            }
+                        }
                     }
                 }
             }
@@ -248,8 +255,8 @@ namespace Seserot {
         }
     }
 
-    Parser::Parser(std::vector<Token> tokens, ErrorTable &errorTable)
-            : tokens(std::move(tokens)), errorTable(errorTable) {}
+    Parser::Parser(std::vector<Token> tokens, ErrorTable &errorTable):
+            tokens(std::move(tokens)), errorTable(errorTable) {}
 
     /**
      * 将一个token前的所有modifier（token形式）解析为Modifier枚举
@@ -269,14 +276,12 @@ namespace Seserot {
                     appendError(0, "modifier duplicated", first->start);
                 }
                 ret.insert(first->content);
-            }
-            else if (first->type != Token::NewLine) {
+            } else if (first->type != Token::NewLine) {
                 // other
                 break;
             }
             first->parsed = Token::Statement;
-            if (first == tokens.begin())
-                break;
+            if (first == tokens.begin()) break;
             first--;
         }
         unsigned int m = def;
@@ -290,20 +295,15 @@ namespace Seserot {
                 }
                 accessibilityParsed = true;
                 if (mo == "public") {
-
-                }
-                else if (mo == "private") {
+                } else if (mo == "private") {
                     m |= PrivateInternal;
                     m |= PrivateProtected;
-                }
-                else if (mo == "protected") {
+                } else if (mo == "protected") {
                     m |= PrivateProtected;
-                }
-                else if (mo == "internal") {
+                } else if (mo == "internal") {
                     m |= PrivateInternal;
                 }
-            }
-            else if (mo == "mutable" || mo == "immutable") {
+            } else if (mo == "mutable" || mo == "immutable") {
                 if (mutableParsed) {
                     appendError(2505, "conflict mutable modifier.", it->start);
                 }
@@ -311,36 +311,28 @@ namespace Seserot {
                 if (mo == "mutable") {
                     m |= Mutable;
                 }
-            }
-            else if (mo == "static") {
+            } else if (mo == "static") {
                 m |= Static;
-            }
-            else if (mo == "final") {
+            } else if (mo == "final") {
                 m |= Final;
-            }
-            else if (mo == "abstract") {
+            } else if (mo == "abstract") {
                 m |= Abstract;
-            }
-            else if (mo == "async") {
+            } else if (mo == "async") {
                 m |= Async;
-            }
-            else if (mo == "readonly") {
+            } else if (mo == "readonly") {
                 m |= Readonly;
-            }
-            else if (mo == "operator") {
+            } else if (mo == "operator") {
                 m |= Operator;
-            }
-            else if (mo == "value") {
+            } else if (mo == "value") {
                 m |= ValueType;
-            }
-            else if (mo == "inner") {
+            } else if (mo == "inner") {
                 m |= Inner;
             }
         }
         if ((m & Final) && (m & Static)) {
             appendError(2505, "final and static cannot be used together.", it->start);
         }
-        return (Modifiers) m;
+        return (Modifiers)m;
     }
 
     /**
@@ -368,7 +360,7 @@ namespace Seserot {
         while (symbol != nullptr && symbol->type != Symbol::Class) {
             symbol = symbol->father;
         }
-        return (ClassSymbol *) symbol;
+        return (ClassSymbol *)symbol;
     }
 
     /**@todo 全都todo
@@ -376,8 +368,8 @@ namespace Seserot {
     void Parser::parseReference() {
         for (auto &item: tokens) {
             if (item.type == Token::Name && item.parsed == Token::Ready) {
-
-                //searchSymbol(static_cast<typename Symbol::Type>(65535), item.content, token2scope[&item]);
+                // searchSymbol(static_cast<typename Symbol::Type>(65535),
+                // item.content, token2scope[&item]);
 
                 reference.find(&item);
                 // todo
@@ -418,17 +410,15 @@ namespace Seserot {
         while (symbol != nullptr && symbol->type != Symbol::Method) {
             symbol = symbol->father;
         }
-        return (MethodSymbol *) symbol;
+        return (MethodSymbol *)symbol;
     }
 
     [[deprecated("llvm can solve this problem")]] size_t Parser::generateStack(MethodSymbol *methodSymbol) {
         if (!methodSymbol->genericArgs.empty()) {
             return 0;
+        } else {
         }
-        else {
-
-        }
-        return 0;//todo
+        return 0;  // todo
     }
 
 #pragma clang diagnostic push
@@ -444,48 +434,38 @@ namespace Seserot {
         AST::ASTNode::Actions actions;
         std::vector<std::variant<std::unique_ptr<AST::ASTNode>, std::string>> s;
         const std::map<std::string, AST::ASTNode::Actions> actionMap{
-                {"+",  AST::ASTNode::Actions::Add},
-                {"-",  AST::ASTNode::Actions::Subtract},
-                {"*",  AST::ASTNode::Actions::Multiple},
-                {"/",  AST::ASTNode::Actions::Divide},
-                {"%",  AST::ASTNode::Actions::Mod},
-                {"&&", AST::ASTNode::Actions::LogicAnd},
-                {"||", AST::ASTNode::Actions::LogicOr},
-                {"!",  AST::ASTNode::Actions::LogicNot},
-                {"&",  AST::ASTNode::Actions::BitAnd},
-                {"|",  AST::ASTNode::Actions::BitOr},
-                {"~",  AST::ASTNode::Actions::BitNot},
-                {"<<", AST::ASTNode::Actions::LeftShift},
-                {">>", AST::ASTNode::Actions::RightShift},
-                {"^",  AST::ASTNode::Actions::BitXor}
-        };
-        const std::vector<std::set<AST::ASTNode::Actions>> priority{
-                {
-                        AST::ASTNode::Actions::Multiple,
-                        AST::ASTNode::Actions::Divide,
-                        AST::ASTNode::Actions::Mod,
-                },
-                {
-                        AST::ASTNode::Actions::Add,
-                        AST::ASTNode::Actions::Subtract,
-                },
-                {
-                        AST::ASTNode::Actions::BitAnd,
-                        AST::ASTNode::Actions::BitOr,
-                        AST::ASTNode::Actions::BitNot,
-                        AST::ASTNode::Actions::BitXor,
-                        AST::ASTNode::Actions::RightShift,
-                        AST::ASTNode::Actions::LeftShift,
-                },
-                {
-                        AST::ASTNode::Actions::LogicNot,
-                        AST::ASTNode::Actions::LogicAnd,
-                        AST::ASTNode::Actions::LogicOr,
-                },
-                {
-                        //赋值
-                }
-        };
+                {"+", AST::ASTNode::Actions::Add},         {"-", AST::ASTNode::Actions::Subtract},
+                {"*", AST::ASTNode::Actions::Multiple},    {"/", AST::ASTNode::Actions::Divide},
+                {"%", AST::ASTNode::Actions::Mod},         {"&&", AST::ASTNode::Actions::LogicAnd},
+                {"||", AST::ASTNode::Actions::LogicOr},    {"!", AST::ASTNode::Actions::LogicNot},
+                {"&", AST::ASTNode::Actions::BitAnd},      {"|", AST::ASTNode::Actions::BitOr},
+                {"~", AST::ASTNode::Actions::BitNot},      {"<<", AST::ASTNode::Actions::LeftShift},
+                {">>", AST::ASTNode::Actions::RightShift}, {"^", AST::ASTNode::Actions::BitXor}};
+        const std::vector<std::set<AST::ASTNode::Actions>> priority{{
+                                                                            AST::ASTNode::Actions::Multiple,
+                                                                            AST::ASTNode::Actions::Divide,
+                                                                            AST::ASTNode::Actions::Mod,
+                                                                    },
+                                                                    {
+                                                                            AST::ASTNode::Actions::Add,
+                                                                            AST::ASTNode::Actions::Subtract,
+                                                                    },
+                                                                    {
+                                                                            AST::ASTNode::Actions::BitAnd,
+                                                                            AST::ASTNode::Actions::BitOr,
+                                                                            AST::ASTNode::Actions::BitNot,
+                                                                            AST::ASTNode::Actions::BitXor,
+                                                                            AST::ASTNode::Actions::RightShift,
+                                                                            AST::ASTNode::Actions::LeftShift,
+                                                                    },
+                                                                    {
+                                                                            AST::ASTNode::Actions::LogicNot,
+                                                                            AST::ASTNode::Actions::LogicAnd,
+                                                                            AST::ASTNode::Actions::LogicOr,
+                                                                    },
+                                                                    {
+                                                                            //赋值
+                                                                    }};
         const std::set<AST::ASTNode::Actions> unary = {
                 AST::ASTNode::Actions::BitNot,
                 AST::ASTNode::Actions::LogicNot,
@@ -500,8 +480,8 @@ namespace Seserot {
         // 7. assign
         // 8. comma
 
-        //todo:
-        // member access
+        // todo:
+        //  member access
 
         // 将tokens解析到s
         // function & bracket
@@ -518,14 +498,13 @@ namespace Seserot {
                         // 对于if，函数之类的，由于括号会继续解析
                         tokenIter++;
                         success = true;
-                    }
-                    else
+                    } else
                         tokenIter++;
                     break;
                 case Token::Operator: {
                     if (tokenIter->content == ";") {
                         if (untilBracket) {
-                            //todo: 分配错误码
+                            // todo: 分配错误码
                             appendError(0, "unexpected ';' in expression.", tokenIter->start);
                             return nullptr;
                         }
@@ -535,9 +514,8 @@ namespace Seserot {
                     if (tokenIter->content.length() == 1 && tokenIter->content[0] == untilBracket) {
                         success = true;
                         tokenIter++;
-                        break;//因为括号结束
+                        break;  //因为括号结束
                     }
-
 
                     else if (tokenIter->content == "(") {
                         // brackets
@@ -549,11 +527,10 @@ namespace Seserot {
                             errorTable.interrupt();
                         }
                         s.emplace_back(std::move(expr));
-                    }
-                    else {
+                    } else {
                         if (!actionMap.contains(tokenIter->content)) {
                             success = true;
-                            break; // 因为不是运算符结束，不需要前进到
+                            break;  // 因为不是运算符结束，不需要前进到
                         }
                         s.emplace_back(tokenIter->content);
                         tokenIter++;
@@ -570,14 +547,14 @@ namespace Seserot {
                     if (tokenIter + 1 != tokens.end() && (tokenIter + 1)->type == Token::Operator &&
                         (tokenIter + 1)->content == "(") {
                         // function
-                        // this field's purpose is to identify which function should be called.
-                        //todo: 这里已经要进行重载决策了
+                        // this field's purpose is to identify which function
+                        // should be called. todo: 这里已经要进行重载决策了
                         // 同时，之前的类型推断
                         MethodSymbol *methodSymbol = nullptr;
-                        //todo: 重载决策
+                        // todo: 重载决策
                         symbolTable.lookup(tokenIter->content, token2scope[&*tokenIter]);
                         if (!methodSymbol) {
-                            //todo: 分配错误码
+                            // todo: 分配错误码
                             appendError(0, "undefined function '" + tokenIter->content + "'.", tokenIter->start);
                         }
                         std::unique_ptr<AST::ASTNode> node = std::make_unique<AST::FunctionInvokeNode>(methodSymbol);
@@ -588,7 +565,7 @@ namespace Seserot {
                     }
                     // name + name: infix or disallowed
                     if (!s.empty() && s.back().index() == 0) {
-                        //infix function
+                        // infix function
                         bool found = false;
                         for (const auto &item: symbols) {
                             if (item->type == Symbol::Type::Method) {
@@ -617,16 +594,15 @@ namespace Seserot {
                         bool found = false;
                         for (const auto &item: symbols) {
                             if (item->type == Symbol::Type::Variable) {
-                                auto node = std::make_unique<AST::AccessVariableNode>(
-                                        dynamic_cast<VariableSymbol *>(item));
+                                auto node =
+                                        std::make_unique<AST::AccessVariableNode>(dynamic_cast<VariableSymbol *>(item));
                                 s.emplace_back(std::move(node));
                                 found = true;
                                 tokenIter++;
                                 break;
                             }
                         }
-                        if (found)
-                            break;
+                        if (found) break;
                     }
                     break;
                 }
@@ -637,9 +613,9 @@ namespace Seserot {
                     if (!s.empty() && s.back().index() == 1) {
                         std::string op = std::get<std::string>(s.back());
                         if (op == "-") {
-                            if (s.size() == 1 || // 只有一个元素，是负号
-                                (s.size() >= 2 && (s.end() - 2)->index() == 1)//前一个是符号，是负号
-                                    ) {
+                            if (s.size() == 1 ||                                // 只有一个元素，是负号
+                                (s.size() >= 2 && (s.end() - 2)->index() == 1)  //前一个是符号，是负号
+                            ) {
                                 s.pop_back();
                                 negative = true;
                             }
@@ -647,7 +623,7 @@ namespace Seserot {
                     }
                     // parse number
                     std::string toParse = tokenIter->content;
-                    long power = 0;//e后面的指数
+                    long power = 0;  // e后面的指数
                     size_t size;
                     std::unique_ptr<AST::ASTNode> node;
                     std::variant<long long, long double, unsigned long long> v;
@@ -669,7 +645,7 @@ namespace Seserot {
                         if (!suffix.empty() || strlen(end) != 0) {
                             // e.g.
                             // 1.3ue5u
-                            //todo: 分配错误码
+                            // todo: 分配错误码
                             appendError(0, "invalid number suffix.", tokenIter->start);
                         }
                         if (negative) {
@@ -680,19 +656,18 @@ namespace Seserot {
                             appendError(0, "Double literal cannot be NaN / Inf.", tokenIter->start);
                         }
                         node = std::make_unique<AST::FloatingConstantNode>(value);
-                    }
-                    else {
+                    } else {
                         size_t val;
 
                         node = string2FitNumber(toParse, val, negative);
                         if (!node) {
-                            //todo: 分配错误码
+                            // todo: 分配错误码
                             appendError(0, "number size overflow.", tokenIter->start);
                             node = std::make_unique<AST::IntegerConstantNode>(0);
                         }
                     }
 
-                    //check suffix(parsed above here)
+                    // check suffix(parsed above here)
                     for (int i = 0; i < suffix.length(); ++i) {
                         if (suffix.find(suffix[i], i + 1) != std::string::npos) {
                             // todo: 分配错误码
@@ -739,12 +714,10 @@ namespace Seserot {
                             it = s.insert(it, std::move(node));
                             // it -> new obj
                         }
-                    }
-                    else if (it == s.begin() || it + 1 == s.end()) {//双目运算符但是ASTNode不够
-                        //todo: 分配错误码
+                    } else if (it == s.begin() || it + 1 == s.end()) {  //双目运算符但是ASTNode不够
+                        // todo: 分配错误码
                         errorTable.interrupt();
-                    }
-                    else {
+                    } else {
                         auto node = std::make_unique<AST::BinaryOperatorNode>();
                         node->action = action;
                         // it -> op
@@ -772,7 +745,7 @@ namespace Seserot {
 
 #pragma clang diagnostic pop
 
-    template<class T>
+    template <class T>
     std::optional<T> Parser::convertToNumber(const std::string &str) {
         T t;
         std::stringstream ss;
@@ -790,9 +763,11 @@ namespace Seserot {
      * @param str 正数，不含非数字字符
      * @param ret 返回值
      * @param negative 表示这个数字是不是false
-     * @return 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
+     * @return
+     * 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
      */
-    std::unique_ptr<AST::IntegerConstantNode> Parser::string2FitNumber(const std::string &str, size_t &ret, bool negative) {
+    std::unique_ptr<AST::IntegerConstantNode> Parser::string2FitNumber(const std::string &str, size_t &ret,
+                                                                       bool negative) {
         std::stringstream ss;
         unsigned long long ll;
         ss << str;
@@ -808,25 +783,19 @@ namespace Seserot {
             return nullptr;
         }
         if (ll & 0xffffffff00000000ull) {
-            return std::make_unique<AST::IntegerConstantNode>((uint64) ll);
-        }
-        else if (negative && (ll & 80000000ull)) {
-            return std::make_unique<AST::IntegerConstantNode>((int64) -ll);
-        }
-        else if (ll & 0xffff0000ull) {
-            return std::make_unique<AST::IntegerConstantNode>((uint32) ll);
-        }
-        else if (negative && (ll & 8000ull)) {
-            return std::make_unique<AST::IntegerConstantNode>((int32) -ll);
-        }
-        else if (ll & 0xff00ull) {
-            return std::make_unique<AST::IntegerConstantNode>((uint16) ll);
-        }
-        else if (negative && (ll & 80ull)) {
-            return std::make_unique<AST::IntegerConstantNode>((int16) -ll);
-        }
-        else {
-            return std::make_unique<AST::IntegerConstantNode>((int8) ll);
+            return std::make_unique<AST::IntegerConstantNode>((uint64)ll);
+        } else if (negative && (ll & 80000000ull)) {
+            return std::make_unique<AST::IntegerConstantNode>((int64)-ll);
+        } else if (ll & 0xffff0000ull) {
+            return std::make_unique<AST::IntegerConstantNode>((uint32)ll);
+        } else if (negative && (ll & 8000ull)) {
+            return std::make_unique<AST::IntegerConstantNode>((int32)-ll);
+        } else if (ll & 0xff00ull) {
+            return std::make_unique<AST::IntegerConstantNode>((uint16)ll);
+        } else if (negative && (ll & 80ull)) {
+            return std::make_unique<AST::IntegerConstantNode>((int16)-ll);
+        } else {
+            return std::make_unique<AST::IntegerConstantNode>((int8)ll);
         }
     }
 
@@ -835,12 +804,12 @@ namespace Seserot {
     Token &Parser::expectIdentifier(size_t &pos) {
         pos++;
         if (pos == tokens.size()) {
-            //todo: 分配错误码
+            // todo: 分配错误码
             appendError(0, "got EOF but expected an identifier.", tokens[pos - 1].start);
             errorTable.interrupt();
         }
         if (tokens[pos].type != Token::Name) {
-            //todo: 分配错误码
+            // todo: 分配错误码
             appendError(0, "expected identifier.", tokens[pos].start);
             errorTable.interrupt();
         }
@@ -850,12 +819,12 @@ namespace Seserot {
     Token &Parser::expectOperator(size_t &pos) {
         pos++;
         if (pos == tokens.size()) {
-            //todo: 分配错误码
+            // todo: 分配错误码
             appendError(0, "unexpected EOF", tokens.back().stop);
             errorTable.interrupt();
         }
         if (tokens[pos].type != Token::Operator) {
-            //todo: 分配错误码
+            // todo: 分配错误码
             appendError(0, "expected operator.", tokens[pos].start);
             errorTable.interrupt();
         }
@@ -865,7 +834,7 @@ namespace Seserot {
     bool Parser::expectIdentifier(size_t &pos, const std::string &content) {
         pos++;
         if (pos == tokens.size()) {
-            //todo: 分配错误码
+            // todo: 分配错误码
             appendError(0, "got EOF but expected an identifier.", tokens[pos - 1].start);
             errorTable.interrupt();
         }
@@ -873,8 +842,7 @@ namespace Seserot {
     }
 
     llvm::Function *Parser::generateFunctionDefinition(MethodSymbol *symbol, const std::string &name) {
-        std::vector<llvm::Type *> Doubles(symbol->args.size(),
-                                          llvm::Type::getDoubleTy(*thisContext));
+        std::vector<llvm::Type *> Doubles(symbol->args.size(), llvm::Type::getDoubleTy(*thisContext));
         if (!symbol->genericArgs.empty()) {
             return nullptr;
         }
@@ -891,8 +859,7 @@ namespace Seserot {
                 llvm::Function::Create(pFunctionType, llvm::Function::ExternalLinkage, name, thisModule);
 
         unsigned Idx = 0;
-        for (auto &Arg: pFunction->args())
-            Arg.setName(symbol->args[Idx++].name);
+        for (auto &Arg: pFunction->args()) Arg.setName(symbol->args[Idx++].name);
 
         return pFunction;
     }
@@ -900,9 +867,9 @@ namespace Seserot {
     llvm::Type *Parser::getLLVMType(TraitSymbol *traitSymbol) const {
         std::map<TraitSymbol *, llvm::Type *> defaultType = {
                 {BuiltinSymbols::Double, llvm::Type::getDoubleTy(*thisContext)},
-                {BuiltinSymbols::Long,   llvm::Type::getInt64Ty(*thisContext)},
-                {BuiltinSymbols::Int,    llvm::Type::getInt32Ty(*thisContext)},
-                {BuiltinSymbols::Long,   llvm::Type::getInt16PtrTy(*thisContext)},
+                {BuiltinSymbols::Long, llvm::Type::getInt64Ty(*thisContext)},
+                {BuiltinSymbols::Int, llvm::Type::getInt32Ty(*thisContext)},
+                {BuiltinSymbols::Long, llvm::Type::getInt16PtrTy(*thisContext)},
         };
         if (defaultType.contains(traitSymbol)) return defaultType[traitSymbol];
         if (!traitSymbol->genericArgs.empty()) return nullptr;
@@ -916,13 +883,9 @@ namespace Seserot {
         dynamic = llvm::StructType::create(*thisContext);
     }
 
-    void Parser::generateFunctionIR(llvm::Function *symbol, Scope *definition) {
+    void Parser::generateFunctionIR(llvm::Function *symbol, Scope *definition) {}
 
-    }
-
-    void Parser::importSymbols(const std::vector<std::string_view> &symbols) {
-
-    }
+    void Parser::importSymbols(const std::vector<std::string_view> &symbols) {}
 
     std::unique_ptr<AST::ASTNode> Parser::parseIf(Parser::token_iter &tokenIter) {
         if (tokenIter->content != "if" || tokenIter->type != Token::Name) {
@@ -930,19 +893,17 @@ namespace Seserot {
         }
         tokenIter++;
         if (tokenIter == tokens.end()) {
-            //todo: 分配错误码
+            // todo: 分配错误码
             appendError(0, "unexpected EOF", tokens.back().stop);
             return nullptr;
         }
-        bool hasBrackets =
-                tokenIter->content == "(" && tokenIter->type == Token::Operator;
+        bool hasBrackets = tokenIter->content == "(" && tokenIter->type == Token::Operator;
         auto node = std::make_unique<AST::IfElseNode>();
         if (!hasBrackets) {
-            node->condition = std::move(parseExpression(tokenIter));
-        }
-        else {
+            node->condition = parseExpression(tokenIter);
+        } else {
             tokenIter++;
-            node->condition = std::move(parseExpression(tokenIter, ')'));
+            node->condition = parseExpression(tokenIter, ')');
             if (tokenIter == tokens.end()) {
                 appendError(0, "unexpected EOF", tokens.back().stop);
                 return nullptr;
@@ -956,23 +917,12 @@ namespace Seserot {
             appendError(0, "unexpected EOF", tokens.back().stop);
             return nullptr;
         }
-        bool hasBraces =
-                tokenIter->content == "{" && tokenIter->type == Token::Operator;
+        bool hasBraces = tokenIter->content == "{" && tokenIter->type == Token::Operator;
         if (!hasBrackets && !hasBraces) {
             appendError(0, "Non-bracket if expected a '{'.", tokenIter->start);
             return nullptr;
         }
-        if (hasBraces) {
-            tokenIter++;
-            if (tokenIter == tokens.end()) {
-                appendError(0, "unexpected EOF", tokens.back().stop);
-                return nullptr;
-            }
-            node->thenBlock = parseBlock(tokenIter);
-        }
-        else {
-            node->thenBlock = parseExpression(tokenIter);
-        }
+        node->thenBlock = parseBlockOrExpression(tokenIter);
         if (node->thenBlock == nullptr) {
             appendError(0, "expected expression.", tokenIter->start);
             return nullptr;
@@ -987,24 +937,13 @@ namespace Seserot {
                 appendError(0, "unexpected EOF", tokenIter->stop);
                 return nullptr;
             }
-            if (tokenIter->content == "{" && tokenIter->type == Token::Operator) {
-                tokenIter++;
-                if (tokenIter == tokens.end()) {
-                    appendError(0, "unexpected EOF", tokenIter->stop);
-                    return nullptr;
-                }
-                node->elseBlock = parseBlock(tokenIter);
-            }
-            else {
-                node->elseBlock = parseExpression(tokenIter);
-            }
+            node->elseBlock = parseBlockOrExpression(tokenIter);
             if (node->elseBlock == nullptr) {
                 appendError(0, "expected expression.", tokenIter->start);
                 return nullptr;
             }
         }
-
-        return std::move(node);
+        return (node);
     }
 
     std::unique_ptr<AST::ASTNode> Parser::parseFor(Parser::token_iter &tokenIter) {
@@ -1015,22 +954,83 @@ namespace Seserot {
         return nullptr;
     }
 
-    std::unique_ptr<AST::ASTNode> Parser::parseBlock(Parser::token_iter &tokenIter) {
-        return nullptr;
+    std::unique_ptr<AST::ASTNode> Parser::parseBlockOrExpression(Parser::token_iter &tokenIter) {
+        if (tokenIter->content != "{" || tokenIter->type != Token::Operator) {
+            return parseExpression(tokenIter);
+        }
+        std::unique_ptr<AST::BlockNode> node =
+                std::make_unique<AST::BlockNode>(token2scope[&*tokenIter]->getSignature());
+        tokenIter++;
+        while (tokenIter != tokens.end() && tokenIter->content != "}") {
+            auto expr = parseExpression(tokenIter);
+            if (expr == nullptr) {
+                appendError(0, "expected expression.", tokenIter->start);
+                return nullptr;
+            }
+            node->statements.push_back(std::move(expr));
+        }
+        tokenIter++;
+        return node;
     }
 
     NamespaceSymbol *Parser::currentNamespaceSymbol(Symbol *symbol) {
         while (symbol != nullptr && symbol->type != Symbol::Method) {
             symbol = symbol->father;
         }
-        return (NamespaceSymbol *) symbol;
+        return (NamespaceSymbol *)symbol;
     }
 
-    void Parser::appendError(
-            size_t code, const std::string &message, const SourcePosition &position,
-            const std::string &category) {
-        errorTable.errors.push_back(std::make_unique<CompilerError>(
-                position, code, message, category
-        ));
+    void Parser::appendError(size_t code, const std::string &message, const SourcePosition &position,
+                             const std::string &category) {
+        errorTable.errors.push_back(std::make_unique<CompilerError>(position, code, message, category));
     }
-} // Seserot
+
+    std::unique_ptr<AST::ASTNode> Parser::parseNext(token_iter &tokenIter) {
+        if (tokenIter == tokens.end()) {
+            appendError(0, "unexpected EOF", tokens.back().stop);
+            return nullptr;
+        }
+        switch (tokenIter->type) {
+            case Token::Name: {
+                if (tokenIter->content == "if")
+                    return parseIf(tokenIter);
+                else if (tokenIter->content == "for")
+                    return parseFor(tokenIter);
+                else if (tokenIter->content == "while")
+                    return parseWhile(tokenIter);
+                else if (tokenIter->content == "return")
+                    return parseReturn(tokenIter);
+                else
+                    return parseExpression(tokenIter);
+            }
+            case Token::Literal: {
+                return nullptr;
+            }
+            case Token::Character:
+            case Token::Number:
+            case Token::Operator:
+                return parseExpression(tokenIter);
+            case Token::NewLine:
+                return nullptr;
+        }
+    }
+
+    std::unique_ptr<AST::ASTNode> Parser::parseReturn(Parser::token_iter &iter) {
+        if (iter->content != "return" || iter->type != Token::Name) {
+            return nullptr;
+        }
+        iter++;
+        if (iter == tokens.end()) {
+            appendError(0, "unexpected EOF", tokens.back().stop);
+            return nullptr;
+        }
+        auto expr = parseExpression(iter);
+        auto method = reference.find(&*iter);
+        if (method == reference.end() || method->second->type != Symbol::Method) {
+            appendError(0, "Function not found", tokens.back().stop);
+            return nullptr;
+        }
+        auto node = std::make_unique<AST::ReturnNode>(std::move(expr), dynamic_cast<MethodSymbol *>(method->second));
+        return node;
+    }
+}  // namespace Seserot

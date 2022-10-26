@@ -19,36 +19,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_PARSER_H
 #define SESEROT_GEN0_PARSER_H
 
-#include "BasicStructures.h"
-#include <vector>
 #include <llvm/CodeGen/ValueTypes.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Type.h>
 #include <llvm/IR/Constant.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalIFunc.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Value.h>
+
+#include <any>
+#include <map>
+#include <optional>
+#include <set>
+#include <unordered_map>
+#include <vector>
+
+#include "BasicStructures.h"
 #include "ErrorTable.h"
 #include "Symbol.h"
 #include "SymbolTable.h"
-#include <map>
-#include <unordered_map>
-#include <set>
-#include <any>
-#include <optional>
 #include "ast/ASTNode.h"
 #include "ast/IntegerConstantNode.h"
 #include "test/tester.h"
 
 namespace Seserot {
     class Parser {
-    private:
-        friend bool::test(const std::string &what, const std::span<std::string> &args);
-
+       private:
+        friend bool ::test(const std::string &what, const std::span<std::string> &args);
 
         using token_iter = std::vector<Token>::iterator;
-    public:
+
+       public:
         Parser(std::vector<Token> tokens, ErrorTable &errorTable);
 
         void parse();
@@ -80,7 +82,9 @@ namespace Seserot {
 
         void setupCodegen(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, llvm::Module *module);
 
-    private:
+       private:
+        std::unique_ptr<AST::ASTNode> parseNext(token_iter &it);
+
         void importSymbols(const std::vector<std::string_view> &symbols);
 
         Token &read(size_t &);
@@ -102,9 +106,10 @@ namespace Seserot {
 
         std::unique_ptr<AST::ASTNode> parseFor(token_iter &tokenIter);
 
-        std::unique_ptr<AST::ASTNode> parseBlock(token_iter &tokenIter);
+        std::unique_ptr<AST::ASTNode> parseBlockOrExpression(token_iter &tokenIter);
 
-        static std::unique_ptr<AST::IntegerConstantNode> string2FitNumber(const std::string &str, size_t &ret, bool = false);
+        static std::unique_ptr<AST::IntegerConstantNode> string2FitNumber(const std::string &str, size_t &ret,
+                                                                          bool = false);
 
         Token &expectIdentifier(size_t &pos);
 
@@ -112,7 +117,7 @@ namespace Seserot {
 
         bool expectIdentifier(size_t &pos, const std::string &content);
 
-        template<class T>
+        template <class T>
         std::optional<T> convertToNumber(const std::string &str);
 
         std::multimap<Token *, Symbol *> reference;
@@ -121,30 +126,15 @@ namespace Seserot {
         std::vector<ClassSymbol> specializedGenericClass;
         llvm::Type *dynamic{};
         const std::set<std::string> modifiers{
-                "final",
-                "static",
-                "public",
-                "protected",
-                "internal",
-                "private",
-                "mutable",
-                "immutable",
-                "inner",
-                "partial",
+                "final",   "static",  "public",    "protected", "internal",
+                "private", "mutable", "immutable", "inner",     "partial",
 
         };
-        const std::set<std::string> modifierAccessibility{
-                "public",
-                "protected",
-                "internal",
-                "private"
-        };
-        const std::set<std::string> modifierMutable{
-                "mutable",
-                "immutable"
-        };
+        const std::set<std::string> modifierAccessibility{"public", "protected", "internal", "private"};
+        const std::set<std::string> modifierMutable{"mutable", "immutable"};
+
+        std::unique_ptr<AST::ASTNode> parseReturn(token_iter &iter);
     };
+}  // namespace Seserot
 
-} // Seserot
-
-#endif //SESEROT_GEN0_PARSER_H
+#endif  // SESEROT_GEN0_PARSER_H
