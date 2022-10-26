@@ -37,3 +37,4 @@ namespace Seserot::AST {
 
     BlockNode::BlockNode(std::string signature): signature(std::move(signature)) {}
 }  // namespace Seserot::AST
+

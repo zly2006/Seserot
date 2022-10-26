@@ -38,8 +38,8 @@ namespace Seserot {
             return nullptr;
         }
         irBuilder.CreateBr(mergeBlock);
-        thenBlock =
-                irBuilder.GetInsertBlock();  // then中可以还有块，现在把then设置为最新的块，这样merge中的phi才能正确引用
+        thenBlock = irBuilder.GetInsertBlock(); // then中可以还有块，现在把then设置为最新的块，这样merge中的phi才能正确引用
+
 
         func->getBasicBlockList().push_back(elseBlock);
         irBuilder.SetInsertPoint(elseBlock);

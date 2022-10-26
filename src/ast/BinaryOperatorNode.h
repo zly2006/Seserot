@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ASTNode.h"
 
 namespace Seserot::AST {
-
     class BinaryOperatorNode: public ASTNode {
        public:
         std::unique_ptr<ASTNode> left;

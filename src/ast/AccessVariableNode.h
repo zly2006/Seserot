@@ -33,5 +33,4 @@ namespace Seserot::AST {
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
 }  // namespace Seserot::AST
-
 #endif  // SESEROT_GEN0_ACCESS_VARIABLE_NODE_H
