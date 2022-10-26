@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "FloatingConstantNode.h"
+
 #include <llvm/IR/Constant.h>
 
 namespace Seserot::AST {
@@ -27,4 +28,4 @@ namespace Seserot::AST {
     llvm::Value *FloatingConstantNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
         return llvm::ConstantFP::get(context, llvm::APFloat(v));
     }
-}
+}  // namespace Seserot::AST

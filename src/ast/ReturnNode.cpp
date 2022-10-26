@@ -16,15 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "ErrorTable.h"
+#include "ReturnNode.h"
 
-#include <iostream>
-
-void Seserot::ErrorTable::interrupt(const std::string &where) {
-    std::cout << where << "\n"
-              << "Errors: \n";
-    for (auto &item: errors) {
-        std::cout << item->toString() << "\n";
+namespace Seserot::AST {
+    llvm::Value *ReturnNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
+        llvm::Function *function = irBuilder.GetInsertBlock()->getParent();
+        if (!value) {
+            return nullptr;
+        }
+        if (value->inferredType != methodSymbol->returnType) {
+            throw std::runtime_error("Return type mismatch");
+        }
+        if (value->inferredType == BuiltinSymbols::Void) {
+            return irBuilder.CreateRetVoid();
+        }
+        return irBuilder.CreateRet(value->codeGen(irBuilder, context));
     }
-    exit(0x50);
-}
+
+    ReturnNode::ReturnNode(std::unique_ptr<ASTNode> &&value, MethodSymbol *methodSymbol):
+            value(std::move(value)), methodSymbol(methodSymbol) {}
+}  // namespace Seserot::AST

@@ -19,18 +19,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_BYTECODE_WRITER_H
 #define SESEROT_GEN0_BYTECODE_WRITER_H
 
-#include <utility>
 #include <iostream>
+#include <utility>
 
 namespace Seserot {
     class ByteCodeWriter {
-    public:
+       public:
         static int checksum(const char *binary, size_t len);
 
         static std::ostream &writeInt(std::ostream &ostream, int value);
 
         static int readInt(std::istream &istream);
     };
-}
+}  // namespace Seserot
 
-#endif //SESEROT_GEN0_BYTECODE_WRITER_H
+#endif  // SESEROT_GEN0_BYTECODE_WRITER_H

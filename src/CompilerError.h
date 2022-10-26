@@ -19,13 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_COMPILER_ERROR_H
 #define SESEROT_GEN0_COMPILER_ERROR_H
 
-#include "BasicStructures.h"
 #include <memory>
+
+#include "BasicStructures.h"
 
 namespace Seserot {
 
     class CompilerError {
-    public:
+       public:
         SourcePosition where;
         size_t code;
         std::string message;
@@ -39,11 +40,11 @@ namespace Seserot {
     };
 
     class CompilerWarning: public CompilerError {
-    public:
+       public:
         explicit CompilerWarning(SourcePosition where, size_t code, std::string message, std::string category = "");
 
         std::string toString() override;
     };
-} // Seserot
+}  // namespace Seserot
 
-#endif //SESEROT_GEN0_COMPILER_ERROR_H
+#endif  // SESEROT_GEN0_COMPILER_ERROR_H

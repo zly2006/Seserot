@@ -16,15 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "ErrorTable.h"
+#include "BlockNode.h"
 
-#include <iostream>
+#include <utility>
 
-void Seserot::ErrorTable::interrupt(const std::string &where) {
-    std::cout << where << "\n"
-              << "Errors: \n";
-    for (auto &item: errors) {
-        std::cout << item->toString() << "\n";
+namespace Seserot::AST {
+    // 实际上，这并没有创建一个block，因为这里没有label，只要依次对子语句codegen就行了
+    llvm::Value *BlockNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
+        llvm::Function *function = irBuilder.GetInsertBlock()->getParent();
+        // The value of the last expression in the block is the return value of the block.
+        llvm::Value *value;
+        for (const auto &item: statements) {
+            value = item->codeGen(irBuilder, context);
+            if (!value) {
+                return nullptr;
+            }
+        }
+        return value;
     }
-    exit(0x50);
-}
+
+    BlockNode::BlockNode(std::string signature): signature(std::move(signature)) {}
+}  // namespace Seserot::AST

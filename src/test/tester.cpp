@@ -17,22 +17,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "tester.h"
-#include "../Symbol.h"
-#include "../Parser.h"
-#include "../Lexer.h"
-#include "../utils/sum_string.h"
-#include "../utils/myFormat.h"
-#include "../ast/IfElseNode.h"
-#include "../ast/IntegerConstantNode.h"
+
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <span>
-#include <fstream>
+
+#include "../Lexer.h"
+#include "../Parser.h"
+#include "../Symbol.h"
+#include "../ast/IfElseNode.h"
+#include "../ast/IntegerConstantNode.h"
+#include "../utils/myFormat.h"
+#include "../utils/sum_string.h"
 
 using namespace Seserot;
 using namespace llvm;
 
-#define TEST(expr) if (!(expr)) { std::cout << "test for `" #expr "` failed\n"; return false; }
+#define TEST(expr)                                    \
+    if (!(expr)) {                                    \
+        std::cout << "test for `" #expr "` failed\n"; \
+        return false;                                 \
+    }
 
 bool test(const std::string &what, const std::span<std::string> &args) {
     if (what == "params-matching") {
@@ -61,8 +67,7 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         TEST(methodSymbol.match({&newClass, &newClass, BuiltinSymbols::Number, BuiltinSymbols::Number}) == expected)
         TEST((std::is_same<bool, bool>::value))
         return true;
-    }
-    else if (what == "hello-world") {
+    } else if (what == "hello-world") {
         using namespace Seserot;
         ErrorTable errorTable;
         Lexer lexer(errorTable, "toString(\"Hello, world!\")");
@@ -74,8 +79,7 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         parser.setupCodegen(&context, &irBuilder, &module);
 
         return true;
-    }
-    else if (what == "trait-symbol-after") {
+    } else if (what == "trait-symbol-after") {
         TraitSymbol traitSymbol(nullptr, "Test", Modifiers::None, {}, {});
         ClassSymbol symbol1 = {nullptr, "Test", {}, nullptr, Modifiers::None, {&traitSymbol}};
         ClassSymbol symbol2 = {nullptr, "Test", {}, nullptr, Modifiers::None, {&traitSymbol}};
@@ -87,8 +91,7 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         TEST(getCommonBaseClass(&symbol2, &symbol1) == &traitSymbol);
         TEST(getCommonBaseClass(&symbol2, &traitSymbol) == &traitSymbol);
         return true;
-    }
-    else if (what == "lexer") {
+    } else if (what == "lexer") {
         std::cout << "Timer Started\n";
         clock_t start = clock();
         std::ifstream fin(args[0]);
@@ -97,17 +100,16 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         Lexer lexer(errorTable, source);
         lexer.parse();
         clock_t end = clock();
-        std::cout << "Time: " << (double) (end - start) / 1000 << "ms\n";
+        std::cout << "Time: " << (double)(end - start) / 1000 << "ms\n";
         return true;
-    }
-    else if (what == "parser-if") {
+    } else if (what == "parser-if") {
         ErrorTable errorTable;
         Lexer lexer(errorTable, "if (true) 1 else 2");
         lexer.parse();
         Parser parser(lexer.tokens, errorTable);
         parser.scan();
         auto iterator = parser.tokens.begin();
-        auto ifExpr = parser.parseIf(iterator);
+        auto ifExpr = parser.parseNext(iterator);
         auto *ifNode = dynamic_cast<AST::IfElseNode *>(ifExpr.get());
         TEST(ifExpr != nullptr);
         auto *integer = dynamic_cast<AST::IntegerConstantNode *>(ifNode->condition.get());
@@ -120,8 +122,7 @@ bool test(const std::string &what, const std::span<std::string> &args) {
         TEST(integer != nullptr);
         TEST(integer->v == 2);
         return true;
-    }
-    else {
+    } else {
         std::cout << "test " << what << " not found" << std::endl;
         return false;
     }

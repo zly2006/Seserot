@@ -17,19 +17,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "AbstractSyntaxTreeNode.h"
-#include "Parser.h"
+
 #include <fstream>
+
+#include "Parser.h"
 
 namespace Seserot {
     size_t AbstractSyntaxTreeNode::write(char *buffer) {
         assert(buffer != nullptr);
         static_assert(sizeof(action) == 4);
         static_assert(sizeof(long) == 8);
-        memcpy(buffer, &action, 4);//len = 4
+        memcpy(buffer, &action, 4);  // len = 4
         memcpy(buffer + 4, &dataLength, 8);
         memcpy(buffer + 12, data, dataLength);
         uint64 tmp = children.size();
-        memcpy(buffer + 12 + dataLength, &tmp, 8);//len = 12
+        memcpy(buffer + 12 + dataLength, &tmp, 8);  // len = 12
         size_t len = 20 + dataLength + children.size() * 8;
         for (int i = 0; i < children.size(); ++i) {
             size_t added = children[i].write(buffer + len);
@@ -58,7 +60,7 @@ namespace Seserot {
             offset += childLen;
         }
         if (offset != len) {
-            //todo: 运行时报错
+            // todo: 运行时报错
         }
     }
 
@@ -105,4 +107,4 @@ namespace Seserot {
     }
 
     AbstractSyntaxTreeNode::AbstractSyntaxTreeNode() = default;
-} // Seserot
+}  // namespace Seserot

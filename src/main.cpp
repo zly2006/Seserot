@@ -16,17 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *********************************************************************/
 
+#include <llvm/IR/LLVMContext.h>
+
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <filesystem>
-#include <llvm/IR/LLVMContext.h>
+
 #include "Lexer.h"
 #include "Parser.h"
-#include "utils/ByteOrder.h"
 #include "generated/version.h"
 #include "test/tester.h"
+#include "utils/ByteOrder.h"
 #include "utils/common.h"
 
 Seserot::ErrorTable errorTable;
@@ -50,8 +52,7 @@ std::optional<int> build(const std::filesystem::path &path) {
             std::cerr << "Failed to open file: " << item.path() << std::endl;
             return 1;
         }
-        std::string source((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
+        std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         Seserot::Lexer lexer(errorTable, source);
         lexer.parse();
         Seserot::Parser parser(lexer.tokens, errorTable);
@@ -61,9 +62,8 @@ std::optional<int> build(const std::filesystem::path &path) {
 }
 
 int main(int _argc, char **_argv, char **_envp) {
-    static_assert(
-            getEndianOrder() != hl_endianness::HL_PDP_ENDIAN &&
-            getEndianOrder() != hl_endianness::HL_UNKNOWN_ENDIAN);
+    static_assert(getEndianOrder() != hl_endianness::HL_PDP_ENDIAN &&
+                  getEndianOrder() != hl_endianness::HL_UNKNOWN_ENDIAN);
     static_assert(sizeof(Seserot::int8) == 1);
     static_assert(sizeof(Seserot::int16) == 2);
     static_assert(sizeof(Seserot::int32) == 4);
@@ -79,7 +79,8 @@ int main(int _argc, char **_argv, char **_envp) {
         env.emplace_back(*_envp);
         _envp++;
     }
-    std::cout << "Welcome to Seserot!\nThis program is free software under the GNU General Public License.\n";
+    std::cout << "Welcome to Seserot!\nThis program is free software under the "
+                 "GNU General Public License.\n";
     for (int i = 1; i < _argc; ++i) {
         args.emplace_back(_argv[i]);
     }
@@ -99,26 +100,22 @@ Commands:
 Options:
     --llvm          Don't build, just generate LLVM IR.
 )";
-        }
-        else if (c == "-v" || c == "--version") {
+        } else if (c == "-v" || c == "--version") {
             std::cout << "Seserot " SESEROT_VERSION << "\n";
-        }
-        else if (c == "--about") {
+        } else if (c == "--about") {
             std::cout << R"(
 Copyright (C) 2022 zly2006
 
 Source: <https://github.com/zly2006/Seserot>
 Homepage: <https://seserot.se> //我好像要谁捐一个/doge
 )";
-        }
-        else if (c == "--dev-test") {
+        } else if (c == "--dev-test") {
             i++;
             std::cout << "Testing " << args[i] << "...\n";
             std::span<std::string> a(args.data() + i + 1, args.size() - i - 1);
             if (test(args[i], a)) {
                 std::cout << "test " << args[i] << " passed" << std::endl;
-            }
-            else {
+            } else {
                 std::cout << "test " << args[i] << " failed" << std::endl;
                 return 1;
             }

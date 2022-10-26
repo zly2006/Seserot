@@ -19,12 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_UNARY_OPERATOR_NODE_H
 #define SESEROT_GEN0_UNARY_OPERATOR_NODE_H
 
-#include "ASTNode.h"
 #include <memory>
 
+#include "ASTNode.h"
+
 namespace Seserot::AST {
-    class UnaryOperatorNode : public ASTNode {
-    public:
+    class UnaryOperatorNode: public ASTNode {
+       public:
         Actions action;
         std::unique_ptr<ASTNode> child;
 
@@ -32,5 +33,5 @@ namespace Seserot::AST {
 
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
-}
-#endif //SESEROT_GEN0_UNARY_OPERATOR_NODE_H
+}  // namespace Seserot::AST
+#endif  // SESEROT_GEN0_UNARY_OPERATOR_NODE_H

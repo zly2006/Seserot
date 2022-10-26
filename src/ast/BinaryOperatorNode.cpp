@@ -34,4 +34,4 @@ namespace Seserot::AST {
     ASTNode::Actions BinaryOperatorNode::getAction() {
         return action;
     }
-} // AST
+}  // namespace Seserot::AST

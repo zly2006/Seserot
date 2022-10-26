@@ -21,15 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ASTNode.h"
 
-namespace Seserot::AST{
-
-    class FloatingConstantNode : public ASTNode {
-    public:
+namespace Seserot::AST {
+    class FloatingConstantNode: public ASTNode {
+       public:
         double v;
 
         explicit FloatingConstantNode(double v);
 
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;
     };
-}
+}  // namespace Seserot::AST
 #endif

@@ -19,8 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SESEROT_GEN0_SYMBOL_H
 #define SESEROT_GEN0_SYMBOL_H
 
-#include <utility>
 #include <llvm/IR/Function.h>
+
+#include <utility>
 
 #include "BasicStructures.h"
 
@@ -41,7 +42,7 @@ namespace Seserot {
         Operator = 16,
         ValueType = 32,
         Readonly = 64,
-        __ = 128,
+        Lambda = 128,
         Mutable = 256,
         PrivateProtected = 512,
         PrivateInternal = 1024,
@@ -81,43 +82,35 @@ namespace Seserot {
         virtual ~Symbol() = default;
     };
 
-    struct SymbolWithChildren : Symbol {
-        SymbolWithChildren(
-                Scope *scope,
-                Type type,
-                const std::string &name,
-                Scope *childScope);
+    struct SymbolWithChildren: Symbol {
+        SymbolWithChildren(Scope *scope, Type type, const std::string &name, Scope *childScope);
 
         Scope *childScope;
         std::vector<Symbol *> children;
     };
 
-    struct NamespaceSymbol : SymbolWithChildren {
-        NamespaceSymbol(
-                Scope *scope,
-                const std::string &name);
+    struct NamespaceSymbol: SymbolWithChildren {
+        NamespaceSymbol(Scope *scope, const std::string &name);
 
         bool operator==(const NamespaceSymbol &rhs) const;
     };
 
-    struct TraitSymbol : SymbolWithChildren {
-        TraitSymbol(
-                Seserot::Scope *scope, const std::string &name, Seserot::Modifiers modifiers,
-                std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers);
+    struct TraitSymbol: SymbolWithChildren {
+        TraitSymbol(Seserot::Scope *scope, const std::string &name, Seserot::Modifiers modifiers,
+                    std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;
-        std::vector<TraitSymbol*> fathers;
+        std::vector<TraitSymbol *> fathers;
 
-        bool after(TraitSymbol* symbol);
+        bool after(TraitSymbol *symbol);
 
-        bool afterOrEqual(TraitSymbol* symbol);
+        bool afterOrEqual(TraitSymbol *symbol);
     };
 
-    struct ClassSymbol : TraitSymbol {
-        ClassSymbol(
-                Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs, ClassSymbol *closureFather,
-                Modifiers modifiers, std::vector<TraitSymbol *> fathers);
+    struct ClassSymbol: TraitSymbol {
+        ClassSymbol(Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs,
+                    ClassSymbol *closureFather, Modifiers modifiers, std::vector<TraitSymbol *> fathers);
 
         /**
          * 弃用
@@ -125,26 +118,24 @@ namespace Seserot {
         ClassSymbol *closureFather;
         size_t size = 0;
 
-        bool operator==(ClassSymbol* another);
+        bool operator==(ClassSymbol *another);
 
         [[nodiscard]] std::string toString() const;
     };
 
-    struct MethodSymbol : SymbolWithChildren {
-        MethodSymbol(
-                Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                std::vector<VariableSymbol> args, TraitSymbol *returnType, const Seserot::Parser &parser);
-        MethodSymbol(
-                Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                std::vector<VariableSymbol> args, TraitSymbol *returnType);
+    struct MethodSymbol: SymbolWithChildren {
+        MethodSymbol(Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
+                     std::vector<VariableSymbol> args, TraitSymbol *returnType, const Seserot::Parser &parser);
+        MethodSymbol(Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
+                     std::vector<VariableSymbol> args, TraitSymbol *returnType);
 
         Modifiers modifiers;
-        std::vector<ClassSymbol> genericArgs;// holder of generic types (uch as T, P)
+        std::vector<ClassSymbol> genericArgs;  // holder of generic types (uch as T, P)
         std::vector<VariableSymbol> args;
         TraitSymbol *returnType;
         size_t stackSize;
 
-        MethodSymbol *specialize(std::vector<ClassSymbol*>, const Seserot::Parser &parser);
+        MethodSymbol *specialize(std::vector<ClassSymbol *>, const Seserot::Parser &parser);
 
         [[nodiscard]] std::string toString() const;
 
@@ -153,34 +144,32 @@ namespace Seserot {
          * @param classes 输入的类型列表
          * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
          */
-        std::optional<std::vector<size_t>> match(std::vector<VariableSymbol> params, std::vector<TraitSymbol*> classes);
-          /**检查是否匹配，支持泛型和vararg
+        std::optional<std::vector<size_t>> match(std::vector<VariableSymbol> params,
+                                                 std::vector<TraitSymbol *> classes);
+        /**检查是否匹配，支持泛型和vararg
          * @param classes 输入的类型列表
          * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
          */
-        std::optional<std::vector<size_t>> match(std::vector<TraitSymbol*> classes);
+        std::optional<std::vector<size_t>> match(std::vector<TraitSymbol *> classes);
 
         llvm::Function *llvmFunction;
     };
 
-    struct VariableSymbol : Symbol {
-        VariableSymbol(
-                Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers,
-                Seserot::TraitSymbol *returnType);
-        TraitSymbol* returnType;
+    struct VariableSymbol: Symbol {
+        VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers,
+                       Seserot::TraitSymbol *returnType);
+        TraitSymbol *returnType;
         Modifiers modifiers;
     };
 
-    struct PropertySymbol : Symbol {
-        PropertySymbol(
-                Scope *scope, const std::string &name, Symbol *father,
-                Modifiers modifiers);
+    struct PropertySymbol: Symbol {
+        PropertySymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers);
 
         Modifiers modifiers;
-        ClassSymbol* returnType = nullptr;
-        MethodSymbol* getter = nullptr;
-        MethodSymbol* setter = nullptr;
+        ClassSymbol *returnType = nullptr;
+        MethodSymbol *getter = nullptr;
+        MethodSymbol *setter = nullptr;
     };
-}
+}  // namespace Seserot
 
-#endif //SESEROT_GEN0_SYMBOL_H
+#endif  // SESEROT_GEN0_SYMBOL_H
