@@ -29,6 +29,8 @@ namespace Seserot::AST {
         Actions action;
         std::unique_ptr<ASTNode> child;
 
+        UnaryOperatorNode(ASTNode::Actions action, std::unique_ptr<ASTNode> child);
+
         Actions getAction() override;
 
         llvm::Value *codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) override;

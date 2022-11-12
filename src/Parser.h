@@ -90,7 +90,7 @@ namespace Seserot {
         Token &read(size_t &);
 
         void appendError(size_t code, const std::string &message, const SourcePosition &position,
-                         const std::string &category = "error");
+                const std::string &category = "error");
 
         static ClassSymbol *currentClassSymbol(Symbol *);
 
@@ -108,8 +108,10 @@ namespace Seserot {
 
         std::unique_ptr<AST::ASTNode> parseBlockOrExpression(token_iter &tokenIter);
 
-        static std::unique_ptr<AST::IntegerConstantNode> string2FitNumber(const std::string &str, size_t &ret,
-                                                                          bool = false);
+        TraitSymbol *parseTrait(token_iter &tokenIter);
+
+        static std::unique_ptr<AST::IntegerConstantNode> string2FitNumber(
+                const std::string &str, size_t &ret, bool = false);
 
         Token &expectIdentifier(size_t &pos);
 
@@ -126,9 +128,16 @@ namespace Seserot {
         std::vector<ClassSymbol> specializedGenericClass;
         llvm::Type *dynamic{};
         const std::set<std::string> modifiers{
-                "final",   "static",  "public",    "protected", "internal",
-                "private", "mutable", "immutable", "inner",     "partial",
-
+                "final",
+                "static",
+                "public",
+                "protected",
+                "internal",
+                "private",
+                "mutable",
+                "immutable",
+                "inner",
+                "partial",
         };
         const std::set<std::string> modifierAccessibility{"public", "protected", "internal", "private"};
         const std::set<std::string> modifierMutable{"mutable", "immutable"};

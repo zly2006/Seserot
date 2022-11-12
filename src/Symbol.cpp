@@ -39,7 +39,7 @@ bool Seserot::isInternalModifier(Seserot::Modifiers modifiers) {
 }
 
 Seserot::TraitSymbol::TraitSymbol(Seserot::Scope *scope, const std::string &name, Seserot::Modifiers modifiers,
-                                  std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers):
+        std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers):
         SymbolWithChildren(scope, Trait, name, nullptr),
         modifiers(modifiers),
         genericArgs(std::move(genericArgs)),
@@ -57,8 +57,7 @@ bool Seserot::TraitSymbol::afterOrEqual(Seserot::TraitSymbol *symbol) {
 }
 
 Seserot::ClassSymbol::ClassSymbol(Seserot::Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs,
-                                  Seserot::ClassSymbol *closureFather, Modifiers modifiers,
-                                  std::vector<TraitSymbol *> fathers):
+        Seserot::ClassSymbol *closureFather, Modifiers modifiers, std::vector<TraitSymbol *> fathers):
         TraitSymbol(scope, name, modifiers, std::move(genericArgs), std::move(fathers)), closureFather(closureFather) {
     type = Class;
 }
@@ -82,17 +81,16 @@ bool Seserot::ClassSymbol::operator==(Seserot::ClassSymbol *another) {
     return true;
 }
 
-Seserot::PropertySymbol::PropertySymbol(Seserot::Scope *scope, const std::string &name, Seserot::Symbol *father,
-                                        Seserot::Modifiers modifiers):
+Seserot::PropertySymbol::PropertySymbol(
+        Seserot::Scope *scope, const std::string &name, Seserot::Symbol *father, Seserot::Modifiers modifiers):
         Symbol(scope, Property, name, father), modifiers(modifiers) {}
 
-Seserot::VariableSymbol::VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers,
-                                        Seserot::TraitSymbol *returnType):
+Seserot::VariableSymbol::VariableSymbol(
+        Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers, Seserot::TraitSymbol *returnType):
         Symbol(scope, Variable, name, father), modifiers(modifiers), returnType(returnType) {}
 
 Seserot::MethodSymbol::MethodSymbol(Scope *scope, const std::string &name, Modifiers modifiers,
-                                    std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args,
-                                    TraitSymbol *returnType):
+        std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args, TraitSymbol *returnType):
         SymbolWithChildren(scope, Method, name, nullptr),
         modifiers(modifiers),
         llvmFunction(nullptr),
@@ -102,8 +100,8 @@ Seserot::MethodSymbol::MethodSymbol(Scope *scope, const std::string &name, Modif
         returnType(returnType) {}
 
 Seserot::MethodSymbol::MethodSymbol(Scope *scope, const std::string &name, Modifiers modifiers,
-                                    std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args,
-                                    TraitSymbol *returnType, const Parser &parser):
+        std::vector<ClassSymbol> genericArgs, std::vector<VariableSymbol> args, TraitSymbol *returnType,
+        const Parser &parser):
         SymbolWithChildren(scope, Method, name, nullptr),
         modifiers(modifiers),
         args(std::move(args)),
@@ -166,8 +164,8 @@ Seserot::MethodSymbol *Seserot::MethodSymbol::specialize(std::vector<ClassSymbol
     return new MethodSymbol(scope, name, modifiers, newGenericArgs, newArgs, newReturnType, parser);
 }
 
-std::optional<std::vector<size_t>> Seserot::MethodSymbol::match(std::vector<VariableSymbol> params,
-                                                                std::vector<TraitSymbol *> classes) {
+std::optional<std::vector<size_t>> Seserot::MethodSymbol::match(
+        std::vector<VariableSymbol> params, std::vector<TraitSymbol *> classes) {
     if (params.empty() && classes.empty()) {
         // 两个都是空的，那就是完全匹配
         return std::vector<size_t>();
@@ -256,8 +254,8 @@ bool Seserot::NamespaceSymbol::operator==(const Seserot::NamespaceSymbol &rhs) c
     return name == rhs.name;
 }
 
-Seserot::SymbolWithChildren::SymbolWithChildren(Seserot::Scope *scope, Seserot::Symbol::Type type,
-                                                const std::string &name, Seserot::Scope *childScope):
+Seserot::SymbolWithChildren::SymbolWithChildren(
+        Seserot::Scope *scope, Seserot::Symbol::Type type, const std::string &name, Seserot::Scope *childScope):
         Symbol(scope, type, name, nullptr), childScope(childScope) {}
 
 Seserot::Symbol::Symbol(Seserot::Scope *scope, Seserot::Symbol::Type type, std::string name, Seserot::Symbol *father):

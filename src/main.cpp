@@ -62,8 +62,8 @@ std::optional<int> build(const std::filesystem::path &path) {
 }
 
 int main(int _argc, char **_argv, char **_envp) {
-    static_assert(getEndianOrder() != hl_endianness::HL_PDP_ENDIAN &&
-                  getEndianOrder() != hl_endianness::HL_UNKNOWN_ENDIAN);
+    static_assert(
+            getEndianOrder() != hl_endianness::HL_PDP_ENDIAN && getEndianOrder() != hl_endianness::HL_UNKNOWN_ENDIAN);
     static_assert(sizeof(Seserot::int8) == 1);
     static_assert(sizeof(Seserot::int16) == 2);
     static_assert(sizeof(Seserot::int32) == 4);

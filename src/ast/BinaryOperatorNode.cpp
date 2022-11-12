@@ -22,12 +22,19 @@ namespace Seserot::AST {
     llvm::Value *BinaryOperatorNode::codeGen(llvm::IRBuilder<> &irBuilder, llvm::LLVMContext &context) {
         llvm::Value *leftValue = left->codeGen(irBuilder, context);
         llvm::Value *rightValue = right->codeGen(irBuilder, context);
-        if (action == Actions::Subtract) {
-            return irBuilder.CreateAdd(leftValue, rightValue, "addtmp");
-        }
-        // todo: other actions
-        else {
-            return nullptr;
+        switch (action) {
+            case Actions::Add:
+                return irBuilder.CreateAdd(leftValue, rightValue);
+            case Actions::Subtract:
+                return irBuilder.CreateSub(leftValue, rightValue);
+            case Actions::Multiple:
+                return irBuilder.CreateMul(leftValue, rightValue);
+            case Actions::Divide:
+                return irBuilder.CreateSDiv(leftValue, rightValue);
+            case Actions::Mod:
+                return irBuilder.CreateSRem(leftValue, rightValue);
+            default:
+                return nullptr;
         }
     }
 

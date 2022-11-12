@@ -32,7 +32,7 @@ namespace Seserot {
                 return String;
             } else if (fileContent[cursor] == '\"') {
                 tokens.push_back(Token{startPosition, position, Token::Literal,
-                                       parseLiteral(fileContent.substr(start, cursor - start))});
+                        parseLiteral(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
             } else if (fileContent[cursor] == '\n') {
@@ -48,7 +48,7 @@ namespace Seserot {
                 return Character;
             } else if (fileContent[cursor] == '\'') {
                 tokens.push_back(Token{startPosition, position, Token::Literal,
-                                       parseLiteral(fileContent.substr(start, cursor - start))});
+                        parseLiteral(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
             } else if (fileContent[cursor] == '\n') {
@@ -64,7 +64,7 @@ namespace Seserot {
                 return Character;
             } else if (fileContent[cursor] == '\'') {
                 tokens.push_back(Token{startPosition, position, Token::Character,
-                                       parseLiteral(fileContent.substr(start, cursor - start))});
+                        parseLiteral(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
             } else {
@@ -73,9 +73,9 @@ namespace Seserot {
             }
         } else if (state == MultiLineString) {
             if (fileContent.length() > cursor + 2 && fileContent[cursor + 0] == '\"' &&
-                fileContent[cursor + 1] == '\"' && fileContent[cursor + 2] == '\"') {
+                    fileContent[cursor + 1] == '\"' && fileContent[cursor + 2] == '\"') {
                 tokens.push_back(Token{startPosition, position, Token::Literal,
-                                       std::string(fileContent.substr(start, cursor - start))});
+                        std::string(fileContent.substr(start, cursor - start))});
                 moveCursor(3);
                 return Ready;
             } else {
@@ -115,7 +115,7 @@ namespace Seserot {
                 return Number;
             } else {
                 tokens.push_back(Token{startPosition, position, Token::Type::Number,
-                                       std::string(fileContent.substr(start, cursor - start))});
+                        std::string(fileContent.substr(start, cursor - start))});
                 return Ready;
             }
         } else if (state == Identifier) {
@@ -124,13 +124,13 @@ namespace Seserot {
                 return Identifier;
             } else {
                 tokens.push_back(Token{startPosition, position, Token::Type::Name,
-                                       std::string(fileContent.substr(start, cursor - start))});
+                        std::string(fileContent.substr(start, cursor - start))});
                 return Ready;
             }
         } else if (state == WideIdentifier) {
             if (fileContent[cursor] == '`') {
                 tokens.push_back(Token{startPosition, position, Token::Type::Name,
-                                       std::string(fileContent.substr(start, cursor - start))});
+                        std::string(fileContent.substr(start, cursor - start))});
                 moveCursor();
                 return Ready;
             } else {
@@ -149,7 +149,7 @@ namespace Seserot {
             }
             if (fileContent[cursor] == '\"') {
                 if (fileContent.length() > cursor + 2 && fileContent[cursor + 1] == '\"' &&
-                    fileContent[cursor + 2] == '\"') {
+                        fileContent[cursor + 2] == '\"') {
                     moveCursor(3);
                     syncStart();
                     return MultiLineString;
@@ -189,7 +189,7 @@ namespace Seserot {
                             syncStart();
                             moveCursor(op.length());
                             tokens.push_back(Token{startPosition, position, Token::Operator,
-                                                   std::string(fileContent.substr(start, cursor - start))});
+                                    std::string(fileContent.substr(start, cursor - start))});
                             return Ready;
                         }
                     }
@@ -293,8 +293,9 @@ namespace Seserot {
             if (fileContent[cursor] == '\n') {
                 position.line++;
                 position.column = 0;
-            } else
+            } else {
                 position.column++;
+            }
             cursor++;
         }
     }
@@ -311,11 +312,11 @@ namespace Seserot {
         if (state != Ready) {  // 还需要做一下收尾
             if (state == Number) {
                 tokens.push_back(Token{startPosition, position, Token::Type::Number,
-                                       std::string(fileContent.substr(start, cursor - start))});
+                        std::string(fileContent.substr(start, cursor - start))});
                 state = Ready;
             } else if (state == Identifier) {
                 tokens.push_back(Token{startPosition, position, Token::Type::Name,
-                                       std::string(fileContent.substr(start, cursor - start))});
+                        std::string(fileContent.substr(start, cursor - start))});
                 state = Ready;
             }
         }
@@ -328,7 +329,7 @@ namespace Seserot {
         }
         bool error = false;
         for (const auto &item: errorTable.errors) {
-            if (typeid(CompilerError).before(typeid(*item))) {
+            if (typeid(CompilerError).before(typeid(decltype(*item)))) {
                 error = true;
             }
             item->print();

@@ -177,13 +177,47 @@ namespace Seserot {
                     }
                     Token &args_optional = read(i);
                     if (args_optional.type == Token::Operator && args_optional.content == "(") {
-                        // todo
-                        while (read(i).content != ")")
-                            ;
+                        while (true) {
+                            // arg name
+                            auto iter = tokens.begin() + (long)i;
+                            do {
+                                iter++;
+                            } while (iter->type == Token::Name);
+                            if ((iter - 1)->type != Token::Name) {
+                                appendError(0, "arg name expected", iter->start);
+                                continue;
+                            }
+                            // colon
+                            if (iter->type != Token::Operator || iter->content != ":") {
+                                appendError(0, "colon expected", iter->start);
+                                continue;
+                            }
+                            auto modifier = parseModifiers(iter - 1);
+                            Token &argName = *(iter - 1);
+                            iter++;
+                            // arg type
+                            TraitSymbol *argType = parseTrait(iter);
+                            if (argType == nullptr) {
+                                appendError(0, "arg type expected", iter->start);
+                                continue;
+                            }
+                            i = iter - tokens.begin();
+                            // todo: check modifiers
+                            methodSymbol->args.emplace_back(nullptr, argName.content, methodSymbol, modifier, argType);
+                            // comma or )
+                            Token &comma_or_right = read(i);
+                            if (comma_or_right.type == Token::Operator && comma_or_right.content == ")") {
+                                break;
+                            } else if (comma_or_right.type == Token::Operator && comma_or_right.content == ",") {
+                                continue;
+                            } else {
+                                appendError(0, "comma or right parenthesis expected", comma_or_right.start);
+                                continue;
+                            }
+                        }
                     }
                     Token &where_optional = read(i);
                     if (where_optional.type == Token::Name && where_optional.content == "where") {
-                        // todo
                     } else if (where_optional.type == Token::Operator && where_optional.content == "{") {
                         newScope(tokens[i]);
                         methodSymbol->childScope = currentScope;
@@ -196,7 +230,7 @@ namespace Seserot {
 
                     if (!symbolTable.emplace(std::unique_ptr<MethodSymbol>(methodSymbol))) {
                         appendError(2504, "method definition already exists", tokens[i].start);
-                        errorTable.interrupt("scanning methods");
+                        continue;  // for (auto &item: methodSymbol->genericArgs) {
                     }
                 } else if (tokens[i].content == "var" || tokens[i].content == "val") {
                     auto mod = parseModifiers(tokens.begin() + (long)i, tokens[i].content == "var" ? Mutable : None);
@@ -233,7 +267,7 @@ namespace Seserot {
                     } else {
                         tokens[i].parsed = Token::Statement;
                         if (i + 1 != tokens.size() && tokens[i + 1].content == "@" &&
-                            tokens[i + 1].type == Token::Operator) {
+                                tokens[i + 1].type == Token::Operator) {
                             i++;
                             auto &t = read(i);
                             if (t.type != Token::Name) {
@@ -433,39 +467,39 @@ namespace Seserot {
     std::unique_ptr<AST::ASTNode> Parser::parseExpression(token_iter &tokenIter, char untilBracket) {
         AST::ASTNode::Actions actions;
         std::vector<std::variant<std::unique_ptr<AST::ASTNode>, std::string>> s;
-        const std::map<std::string, AST::ASTNode::Actions> actionMap{
-                {"+", AST::ASTNode::Actions::Add},         {"-", AST::ASTNode::Actions::Subtract},
-                {"*", AST::ASTNode::Actions::Multiple},    {"/", AST::ASTNode::Actions::Divide},
-                {"%", AST::ASTNode::Actions::Mod},         {"&&", AST::ASTNode::Actions::LogicAnd},
-                {"||", AST::ASTNode::Actions::LogicOr},    {"!", AST::ASTNode::Actions::LogicNot},
-                {"&", AST::ASTNode::Actions::BitAnd},      {"|", AST::ASTNode::Actions::BitOr},
-                {"~", AST::ASTNode::Actions::BitNot},      {"<<", AST::ASTNode::Actions::LeftShift},
-                {">>", AST::ASTNode::Actions::RightShift}, {"^", AST::ASTNode::Actions::BitXor}};
+        const std::map<std::string, AST::ASTNode::Actions> actionMap{{"+", AST::ASTNode::Actions::Add},
+                {"-", AST::ASTNode::Actions::Subtract}, {"*", AST::ASTNode::Actions::Multiple},
+                {"/", AST::ASTNode::Actions::Divide}, {"%", AST::ASTNode::Actions::Mod},
+                {"&&", AST::ASTNode::Actions::LogicAnd}, {"||", AST::ASTNode::Actions::LogicOr},
+                {"!", AST::ASTNode::Actions::LogicNot}, {"&", AST::ASTNode::Actions::BitAnd},
+                {"|", AST::ASTNode::Actions::BitOr}, {"~", AST::ASTNode::Actions::BitNot},
+                {"<<", AST::ASTNode::Actions::LeftShift}, {">>", AST::ASTNode::Actions::RightShift},
+                {"^", AST::ASTNode::Actions::BitXor}};
         const std::vector<std::set<AST::ASTNode::Actions>> priority{{
                                                                             AST::ASTNode::Actions::Multiple,
                                                                             AST::ASTNode::Actions::Divide,
                                                                             AST::ASTNode::Actions::Mod,
                                                                     },
-                                                                    {
-                                                                            AST::ASTNode::Actions::Add,
-                                                                            AST::ASTNode::Actions::Subtract,
-                                                                    },
-                                                                    {
-                                                                            AST::ASTNode::Actions::BitAnd,
-                                                                            AST::ASTNode::Actions::BitOr,
-                                                                            AST::ASTNode::Actions::BitNot,
-                                                                            AST::ASTNode::Actions::BitXor,
-                                                                            AST::ASTNode::Actions::RightShift,
-                                                                            AST::ASTNode::Actions::LeftShift,
-                                                                    },
-                                                                    {
-                                                                            AST::ASTNode::Actions::LogicNot,
-                                                                            AST::ASTNode::Actions::LogicAnd,
-                                                                            AST::ASTNode::Actions::LogicOr,
-                                                                    },
-                                                                    {
-                                                                            //赋值
-                                                                    }};
+                {
+                        AST::ASTNode::Actions::Add,
+                        AST::ASTNode::Actions::Subtract,
+                },
+                {
+                        AST::ASTNode::Actions::BitAnd,
+                        AST::ASTNode::Actions::BitOr,
+                        AST::ASTNode::Actions::BitNot,
+                        AST::ASTNode::Actions::BitXor,
+                        AST::ASTNode::Actions::RightShift,
+                        AST::ASTNode::Actions::LeftShift,
+                },
+                {
+                        AST::ASTNode::Actions::LogicNot,
+                        AST::ASTNode::Actions::LogicAnd,
+                        AST::ASTNode::Actions::LogicOr,
+                },
+                {
+                        //赋值
+                }};
         const std::set<AST::ASTNode::Actions> unary = {
                 AST::ASTNode::Actions::BitNot,
                 AST::ASTNode::Actions::LogicNot,
@@ -545,7 +579,7 @@ namespace Seserot {
                     }
                     auto symbols = symbolTable.lookup(tokenIter->content, token2scope[&*tokenIter]);
                     if (tokenIter + 1 != tokens.end() && (tokenIter + 1)->type == Token::Operator &&
-                        (tokenIter + 1)->content == "(") {
+                            (tokenIter + 1)->content == "(") {
                         // function
                         // this field's purpose is to identify which function
                         // should be called. todo: 这里已经要进行重载决策了
@@ -613,8 +647,8 @@ namespace Seserot {
                     if (!s.empty() && s.back().index() == 1) {
                         std::string op = std::get<std::string>(s.back());
                         if (op == "-") {
-                            if (s.size() == 1 ||                                // 只有一个元素，是负号
-                                (s.size() >= 2 && (s.end() - 2)->index() == 1)  //前一个是符号，是负号
+                            if (s.size() == 1 ||                                    // 只有一个元素，是负号
+                                    (s.size() >= 2 && (s.end() - 2)->index() == 1)  //前一个是符号，是负号
                             ) {
                                 s.pop_back();
                                 negative = true;
@@ -703,16 +737,18 @@ namespace Seserot {
                     AST::ASTNode::Actions action = actionMap.at(std::get<std::string>(*it));
                     if (set.contains(action)) {
                         if (unary.contains(action)) {
-                            auto node = std::make_unique<AST::UnaryOperatorNode>();
-                            node->action = action;
                             // it -> op
                             it = s.erase(it);
                             // it -> obj
-                            node->child = std::move(std::get<0>(*it));
+                            auto node = std::make_unique<AST::UnaryOperatorNode>(action, std::move(std::get<0>(*it)));
                             it = s.erase(it);
                             // it -> obj+1
-                            it = s.insert(it, std::move(node));
-                            // it -> new obj
+                            if (it == s.end()) {
+                                appendError(0, "expected value after unary operator.", tokenIter->start);
+                                return nullptr;
+                            } else {
+                                it = s.insert(it, std::move(node));  // it -> new obj
+                            }
                         }
                     } else if (it == s.begin() || it + 1 == s.end()) {  //双目运算符但是ASTNode不够
                         // todo: 分配错误码
@@ -726,11 +762,14 @@ namespace Seserot {
                         node->left = std::move(std::get<0>(*it));
                         it = s.erase(it);
                         // it -> op
-                        it = s.erase(it);
-                        // it -> op+1
+                        it = s.erase(it);  // it -> op+1
+                        if (it == s.end()) {
+                            appendError(0, "expected value after unary operator.", tokenIter->start);
+                            return nullptr;
+                        }
                         node->right = std::move(std::get<0>(*it));
                         it = s.erase(it);
-                        // it -> op+2
+                        // it -> new obj
                         it = s.insert(it, std::move(node));
                     }
                 }
@@ -766,8 +805,8 @@ namespace Seserot {
      * @return
      * 数据的长度，单位字节，最大为8，如果溢出，则返回256，如果不符合格式，返回0
      */
-    std::unique_ptr<AST::IntegerConstantNode> Parser::string2FitNumber(const std::string &str, size_t &ret,
-                                                                       bool negative) {
+    std::unique_ptr<AST::IntegerConstantNode> Parser::string2FitNumber(
+            const std::string &str, size_t &ret, bool negative) {
         std::stringstream ss;
         unsigned long long ll;
         ss << str;
@@ -980,8 +1019,8 @@ namespace Seserot {
         return (NamespaceSymbol *)symbol;
     }
 
-    void Parser::appendError(size_t code, const std::string &message, const SourcePosition &position,
-                             const std::string &category) {
+    void Parser::appendError(
+            size_t code, const std::string &message, const SourcePosition &position, const std::string &category) {
         errorTable.errors.push_back(std::make_unique<CompilerError>(position, code, message, category));
     }
 
@@ -1032,5 +1071,9 @@ namespace Seserot {
         }
         auto node = std::make_unique<AST::ReturnNode>(std::move(expr), dynamic_cast<MethodSymbol *>(method->second));
         return node;
+    }
+
+    TraitSymbol *Parser::parseTrait(Parser::token_iter &tokenIter) {
+        return nullptr;
     }
 }  // namespace Seserot

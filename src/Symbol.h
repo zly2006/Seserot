@@ -97,7 +97,7 @@ namespace Seserot {
 
     struct TraitSymbol: SymbolWithChildren {
         TraitSymbol(Seserot::Scope *scope, const std::string &name, Seserot::Modifiers modifiers,
-                    std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers);
+                std::vector<ClassSymbol> genericArgs, std::vector<TraitSymbol *> fathers);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;
@@ -110,7 +110,7 @@ namespace Seserot {
 
     struct ClassSymbol: TraitSymbol {
         ClassSymbol(Scope *scope, const std::string &name, std::vector<ClassSymbol> genericArgs,
-                    ClassSymbol *closureFather, Modifiers modifiers, std::vector<TraitSymbol *> fathers);
+                ClassSymbol *closureFather, Modifiers modifiers, std::vector<TraitSymbol *> fathers);
 
         /**
          * 弃用
@@ -125,9 +125,9 @@ namespace Seserot {
 
     struct MethodSymbol: SymbolWithChildren {
         MethodSymbol(Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                     std::vector<VariableSymbol> args, TraitSymbol *returnType, const Seserot::Parser &parser);
+                std::vector<VariableSymbol> args, TraitSymbol *returnType, const Seserot::Parser &parser);
         MethodSymbol(Scope *scope, const std::string &name, Modifiers modifiers, std::vector<ClassSymbol> genericArgs,
-                     std::vector<VariableSymbol> args, TraitSymbol *returnType);
+                std::vector<VariableSymbol> args, TraitSymbol *returnType);
 
         Modifiers modifiers;
         std::vector<ClassSymbol> genericArgs;  // holder of generic types (uch as T, P)
@@ -144,8 +144,8 @@ namespace Seserot {
          * @param classes 输入的类型列表
          * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
          */
-        std::optional<std::vector<size_t>> match(std::vector<VariableSymbol> params,
-                                                 std::vector<TraitSymbol *> classes);
+        std::optional<std::vector<size_t>> match(
+                std::vector<VariableSymbol> params, std::vector<TraitSymbol *> classes);
         /**检查是否匹配，支持泛型和vararg
          * @param classes 输入的类型列表
          * @return 表示第i个参数对应参数列表中的第ret[i]个参数，这是解析vararg的结果
@@ -157,7 +157,7 @@ namespace Seserot {
 
     struct VariableSymbol: Symbol {
         VariableSymbol(Scope *scope, const std::string &name, Symbol *father, Modifiers modifiers,
-                       Seserot::TraitSymbol *returnType);
+                Seserot::TraitSymbol *returnType);
         TraitSymbol *returnType;
         Modifiers modifiers;
     };
